@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Кликер · PWA игра</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            touch-action: manipulation;
+        }
+        .game {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            border-radius: 64px;
+            padding: 24px 20px 32px;
+            text-align: center;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
+            width: 320px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 8px 0;
+            color: #FFD966;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 5px #00000030;
+        }
+        .score-box {
+            background: #0f0f1a;
+            border-radius: 60px;
+            padding: 16px 20px;
+            margin: 16px 0;
+            box-shadow: inset 0 2px 5px #00000055, 0 5px 10px #00000030;
+        }
+        .score-label {
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: #aaa;
+        }
+        .score-value {
+            font-size: 4rem;
+            font-weight: 800;
+            color: #FFB347;
+            line-height: 1;
+            margin-top: 6px;
+            text-shadow: 0 0 8px #ff9f2e80;
+        }
+        .click-btn {
+            background: radial-gradient(circle at 30% 20%, #FFA559, #E67E22);
+            border: none;
+            width: 200px;
+            height: 200px;
+            border-radius: 100%;
+            font-size: 3.8rem;
+            font-weight: bold;
+            color: white;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 0 #B45F1B, 0 10px 30px black;
+            transition: 0.05s linear;
+            cursor: pointer;
+            touch-action: manipulation;
+            background-size: 100% 100%;
+        }
+        .click-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 10px 0 #B45F1B, 0 12px 25px black;
+        }
+        .upgrade-area {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .upgrade {
+            background: #1e2a3a;
+            flex: 1;
+            padding: 12px 5px;
+            border-radius: 48px;
+            color: white;
+            font-weight: bold;
+            border: 1px solid #FFB34770;
+            transition: 0.1s;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .upgrade:active {
+            background: #ffa02e;
+            transform: scale(0.96);
+            color: #1e1e2a;
+        }
+        .upgrade span {
+            display: block;
+            font-size: 0.7rem;
+            color: #FFD966;
+            margin-top: 5px;
+        }
+        .reset-btn {
+            background: none;
+            border: 1px solid #ff7e5e70;
+            margin-top: 20px;
+            padding: 8px;
+            width: 100%;
+            border-radius: 40px;
+            color: #ffaa88;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        footer {
+            font-size: 0.6rem;
+            color: #aaa;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+<div class="game">
+    <h1>🍪 КЛИКЕР</h1>
+    <div class="score-box">
+        <div class="score-label">Печенек (очки)</div>
+        <div class="score-value" id="scoreDisplay">0</div>
+    </div>
+    <div class="click-btn" id="clickButton">🍪</div>
+
+    <div class="upgrade-area">
+        <div class="upgrade" id="upgradeAuto">
+            🤖 Автокликер<br>
+            <span id="autoPrice">50 🍪</span>
+        </div>
+        <div class="upgrade" id="upgradeMulti">
+            ✨ Умножитель<br>
+            <span id="multiPrice">100 🍪</span>
+        </div>
+    </div>
+    <button class="reset-btn" id="resetBtn">🔄 Новая игра</button>
+    <footer>👇 Нажми на печеньку<br>📱 Работает офлайн + можно установить на экран</footer>
+</div>
+
+<script>
+    // --- Игровое состояние ---
+    let cookies = 0;
+    let autoClickerLevel = 0;      // сколько печенек в секунду (1 уровень = +1/сек)
+    let clickMultiplier = 1;        // множитель клика (1 = +1 печенька)
+
+    // Цены улучшений
+    let autoPrice = 50;
+    let multiPrice = 100;
+
+    // Элементы DOM
+    const scoreSpan = document.getElementById('scoreDisplay');
+    const clickBtn = document.getElementById('clickButton');
+    const upgradeAutoDiv = document.getElementById('upgradeAuto');
+    const upgradeMultiDiv = document.getElementById('upgradeMulti');
+    const autoPriceSpan = document.getElementById('autoPrice');
+    const multiPriceSpan = document.getElementById('multiPrice');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Функция обновления интерфейса (отрисовка цифр и цен)
+    function updateUI() {
+        scoreSpan.innerText = Math.floor(cookies);
+        autoPriceSpan.innerText = autoPrice + ' 🍪';
+        multiPriceSpan.innerText = multiPrice + ' 🍪';
+    }
+
+    // Сохранить в localStorage (чтобы не пропадало при закрытии)
+    function saveGame() {
+        const save = {
+            cookies: cookies,
+            autoClickerLevel: autoClickerLevel,
+            clickMultiplier: clickMultiplier,
+            autoPrice: autoPrice,
+            multiPrice: multiPrice
+        };
+        localStorage.setItem('clickerPWA', JSON.stringify(save));
+    }
+
+    // Загрузить игру
+    function loadGame() {
+        const raw = localStorage.getItem('clickerPWA');
+        if (!raw) return false;
+        try {
+            const data = JSON.parse(raw);
+            cookies = data.cookies || 0;
+            autoClickerLevel = data.autoClickerLevel || 0;
+            clickMultiplier = data.clickMultiplier || 1;
+            autoPrice = data.autoPrice || 50;
+            multiPrice = data.multiPrice || 100;
+            updateUI();
+            return true;
+        } catch(e) { return false; }
+    }
+
+    // Добавить печеньки и сохранить
+    function addCookies(amount) {
+        if (amount <= 0) return;
+        cookies += amount;
+        updateUI();
+        saveGame();
+    }
+
+    // Купить автокликер (+1 печенька в секунду)
+    function buyAutoClicker() {
+        if (cookies >= autoPrice) {
+            cookies -= autoPrice;
+            autoClickerLevel++;
+            // Цена растёт: следующая на +25 печенек (лёгкая прогрессия)
+            autoPrice = Math.floor(autoPrice + 25);
+            updateUI();
+            saveGame();
+            return true;
+        } else {
+            // Визуальная обратная связь (покачивание кнопки)
+            const btn = upgradeAutoDiv;
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = '', 150);
+            return false;
+        }
+    }
+
+    // Купить множитель клика (+1 к множителю)
+    function buyMultiplier() {
+        if (cookies >= multiPrice) {
+            cookies -= multiPrice;
+            clickMultiplier++;
+            multiPrice = Math.floor(multiPrice * 1.4);   // цена сильно растёт
+            updateUI();
+            saveGame();
+            return true;
+        } else {
+            const btn = upgradeMultiDiv;
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = '', 150);
+            return false;
+        }
+    }
+
+    // Сброс всей игры
+    function resetGame() {
+        if (confirm('♻️ Сбросить прогресс? Вся статистика удалится.')) {
+            cookies = 0;
+            autoClickerLevel = 0;
+            clickMultiplier = 1;
+            autoPrice = 50;
+            multiPrice = 100;
+            updateUI();
+            saveGame();
+        }
+    }
+
+    // --- Игровой цикл для автокликера ---
+    let lastTimestamp = 0;
+    function gameLoop(now) {
+        requestAnimationFrame(gameLoop);
+        // авто-клик раз в секунду (на основе реального времени)
+        if (autoClickerLevel > 0) {
+            const nowSec = Date.now() / 1000;
+            if (!lastTimestamp) lastTimestamp = nowSec;
+            const delta = nowSec - lastTimestamp;
+            if (delta >= 1.0) {
+                const totalAuto = autoClickerLevel;   // каждый уровень даёт +1 печеньку/сек
+                if (totalAuto > 0) {
+                    cookies += totalAuto;
+                    updateUI();
+                    saveGame();
+                }
+                lastTimestamp = nowSec;
+            }
+        } else {
+            lastTimestamp = Date.now() / 1000;
+        }
+    }
+
+    // --- Обработчики для касаний и кликов ---
+    function onClickCookie(e) {
+        // Эффект нажатия на печеньку
+        const btn = clickBtn;
+        btn.style.transform = 'translateY(6px)';
+        setTimeout(() => btn.style.transform = '', 100);
+
+        let gain = 1 * clickMultiplier;
+        addCookies(gain);
+
+        // крошечный визуал + цифра
+        const floating = document.createElement('div');
+        floating.innerText = `+${gain}`;
+        floating.style.position = 'fixed';
+        floating.style.left = (e.clientX || e.touches?.[0]?.clientX || 160) + 'px';
+        floating.style.top = (e.clientY || e.touches?.[0]?.clientY || 300) + 'px';
+        floating.style.fontSize = '1.7rem';
+        floating.style.fontWeight = 'bold';
+        floating.style.color = '#FFB347';
+        floating.style.pointerEvents = 'none';
+        floating.style.textShadow = '0 0 3px black';
+        floating.style.zIndex = '999';
+        floating.style.transition = 'all 0.6s ease-out';
+        document.body.appendChild(floating);
+        setTimeout(() => { floating.style.opacity = '0'; floating.style.transform = 'translateY(-40px)'; }, 20);
+        setTimeout(() => floating.remove(), 700);
+    }
+
+    // --- PWA регистрация service worker ---
+    function registerSW() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => {
+                console.log('⚠️ SW регистрация не удалась (возможно просто нет sw.js)');
+            });
+        }
+    }
+
+    // --- Инициализация и привязка событий ---
+    function init() {
+        loadGame();
+        updateUI();
+
+        // события для клика по печеньке (мышь и тач)
+        clickBtn.addEventListener('click', onClickCookie);
+        clickBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            onClickCookie(e);
+        });
+
+        upgradeAutoDiv.addEventListener('click', buyAutoClicker);
+        upgradeAutoDiv.addEventListener('touchstart', (e) => { e.preventDefault(); buyAutoClicker(); });
+
+        upgradeMultiDiv.addEventListener('click', buyMultiplier);
+        upgradeMultiDiv.addEventListener('touchstart', (e) => { e.preventDefault(); buyMultiplier(); });
+
+        resetBtn.addEventListener('click', resetGame);
+        resetBtn.addEventListener('touchstart', (e) => { e.preventDefault(); resetGame(); });
+
+        // запускаем игровой цикл
+        requestAnimationFrame(gameLoop);
+        // пробуем PWA регистрацию
+        registerSW();
+    }
+
+    init();
+</script>
+</body>
+</html>
