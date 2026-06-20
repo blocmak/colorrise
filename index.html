@@ -3,351 +3,1103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Кликер · PWA игра</title>
+    <meta name="theme-color" content="#101528">
+    <meta name="description" content="ColorWars PWA prototype: захватывай территорию выбором цветов.">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <title>ColorWars · PWA prototype</title>
     <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0d1020;
+            --panel: rgba(18, 24, 45, 0.86);
+            --panel-strong: #151b32;
+            --text: #f8fbff;
+            --muted: #9ba9c9;
+            --accent: #66e3ff;
+            --danger: #ff6b8a;
+            --good: #72f1a8;
+            --radius: 24px;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+        }
+
         * {
+            box-sizing: border-box;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
         body {
             margin: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(102, 227, 255, 0.24), transparent 32rem),
+                radial-gradient(circle at bottom right, rgba(255, 107, 138, 0.22), transparent 30rem),
+                linear-gradient(135deg, #090d1a 0%, #101528 52%, #17113a 100%);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             touch-action: manipulation;
         }
-        .game {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(4px);
-            border-radius: 64px;
-            padding: 24px 20px 32px;
-            text-align: center;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
-            width: 320px;
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-        h1 {
-            font-size: 2rem;
-            margin: 0 0 8px 0;
-            color: #FFD966;
-            letter-spacing: 2px;
-            text-shadow: 0 2px 5px #00000030;
-        }
-        .score-box {
-            background: #0f0f1a;
-            border-radius: 60px;
-            padding: 16px 20px;
-            margin: 16px 0;
-            box-shadow: inset 0 2px 5px #00000055, 0 5px 10px #00000030;
-        }
-        .score-label {
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            color: #aaa;
-        }
-        .score-value {
-            font-size: 4rem;
-            font-weight: 800;
-            color: #FFB347;
-            line-height: 1;
-            margin-top: 6px;
-            text-shadow: 0 0 8px #ff9f2e80;
-        }
-        .click-btn {
-            background: radial-gradient(circle at 30% 20%, #FFA559, #E67E22);
-            border: none;
-            width: 200px;
-            height: 200px;
-            border-radius: 100%;
-            font-size: 3.8rem;
-            font-weight: bold;
-            color: white;
-            margin: 20px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 20px 0 #B45F1B, 0 10px 30px black;
-            transition: 0.05s linear;
+
+        button {
+            border: 0;
+            color: inherit;
+            font: inherit;
             cursor: pointer;
-            touch-action: manipulation;
-            background-size: 100% 100%;
         }
-        .click-btn:active {
-            transform: translateY(6px);
-            box-shadow: 0 10px 0 #B45F1B, 0 12px 25px black;
+
+        .app {
+            width: min(1180px, 100%);
+            margin: 0 auto;
+            padding: max(18px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
         }
-        .upgrade-area {
-            margin-top: 15px;
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: end;
+            margin-bottom: 18px;
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            color: var(--accent);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.3rem, 8vw, 5.5rem);
+            line-height: 0.9;
+            letter-spacing: -0.08em;
+            text-transform: uppercase;
+        }
+
+        .hero p {
+            max-width: 760px;
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: clamp(1rem, 2vw, 1.18rem);
+            line-height: 1.55;
+        }
+
+        .install-hint {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .board-card,
+        .side-card {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius);
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+
+        .board-card {
+            padding: clamp(10px, 2vw, 18px);
+        }
+
+        .board-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .status {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .status strong {
+            font-size: 1.05rem;
+        }
+
+        .status span {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .primary-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: transform 120ms ease, background 120ms ease;
+        }
+
+        .action-btn:hover,
+        .action-btn:focus-visible {
+            background: rgba(255, 255, 255, 0.16);
+            outline: none;
+        }
+
+        .action-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #33d6ff, #836bff);
+            color: #06101b;
+            font-weight: 800;
+        }
+
+        .board-wrap {
+            aspect-ratio: 1;
+            width: 100%;
+            max-height: calc(100vh - 220px);
+            min-height: 300px;
+            margin: 0 auto;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            gap: clamp(2px, 0.45vw, 5px);
+            width: 100%;
+            height: 100%;
+            padding: clamp(5px, 1vw, 9px);
+            border-radius: 22px;
+            background: rgba(2, 6, 17, 0.62);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+        }
+
+        .cell {
+            position: relative;
+            min-width: 0;
+            border-radius: clamp(7px, 1.1vw, 13px);
+            background: var(--cell-color);
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+                inset 0 -10px 18px rgba(0, 0, 0, 0.15);
+            transition: transform 140ms ease, box-shadow 140ms ease, background 160ms ease;
+        }
+
+        .cell[data-owner="0"] {
+            box-shadow:
+                inset 0 0 0 3px #ffffff,
+                inset 0 -10px 18px rgba(0, 0, 0, 0.18),
+                0 0 14px rgba(255, 255, 255, 0.36);
+        }
+
+        .cell[data-owner="1"],
+        .cell[data-owner="2"],
+        .cell[data-owner="3"] {
+            box-shadow:
+                inset 0 0 0 3px rgba(12, 17, 31, 0.86),
+                inset 0 -10px 18px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell[data-frontier="true"] {
+            transform: scale(1.03);
+        }
+
+        .cell::after {
+            position: absolute;
+            inset: 24%;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(7, 10, 22, 0.55);
+            color: #fff;
+            font-size: clamp(0.62rem, 1.8vw, 0.92rem);
+            font-weight: 900;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+        }
+
+        .cell[data-owner="0"]::after {
+            content: "YOU";
+        }
+
+        .cell[data-owner="1"]::after {
+            content: "AI";
+        }
+
+        .cell[data-owner="2"]::after {
+            content: "AI";
+        }
+
+        .cell[data-owner="3"]::after {
+            content: "AI";
+        }
+
+        .side-card {
+            padding: 18px;
+        }
+
+        .panel-title {
             display: flex;
             justify-content: space-between;
             gap: 12px;
+            align-items: center;
+            margin-bottom: 14px;
         }
-        .upgrade {
-            background: #1e2a3a;
-            flex: 1;
-            padding: 12px 5px;
-            border-radius: 48px;
-            color: white;
-            font-weight: bold;
-            border: 1px solid #FFB34770;
-            transition: 0.1s;
-            cursor: pointer;
-            touch-action: manipulation;
+
+        .panel-title h2 {
+            margin: 0;
+            font-size: 1.05rem;
         }
-        .upgrade:active {
-            background: #ffa02e;
-            transform: scale(0.96);
-            color: #1e1e2a;
+
+        .round-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(102, 227, 255, 0.12);
+            color: var(--accent);
+            font-size: 0.82rem;
+            font-weight: 800;
         }
-        .upgrade span {
+
+        .score-list {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .score-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .player-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.82);
+            background: var(--player-color);
+            box-shadow: 0 0 18px var(--player-color);
+        }
+
+        .score-name {
+            min-width: 0;
+        }
+
+        .score-name strong,
+        .score-name span {
             display: block;
-            font-size: 0.7rem;
-            color: #FFD966;
-            margin-top: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        .reset-btn {
-            background: none;
-            border: 1px solid #ff7e5e70;
-            margin-top: 20px;
-            padding: 8px;
-            width: 100%;
-            border-radius: 40px;
-            color: #ffaa88;
-            font-size: 0.8rem;
-            cursor: pointer;
+
+        .score-name span {
+            color: var(--muted);
+            font-size: 0.78rem;
         }
-        footer {
-            font-size: 0.6rem;
-            color: #aaa;
-            margin-top: 18px;
+
+        .score-value {
+            font-variant-numeric: tabular-nums;
+            font-weight: 900;
+        }
+
+        .progress {
+            grid-column: 2 / 4;
+            height: 8px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress span {
+            display: block;
+            height: 100%;
+            width: var(--score-width);
+            border-radius: inherit;
+            background: var(--player-color);
+        }
+
+        .palette {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 10px 0 18px;
+        }
+
+        .color-btn {
+            min-height: 58px;
+            border-radius: 18px;
+            background: var(--choice-color);
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.3),
+                0 10px 22px rgba(0, 0, 0, 0.22);
+            transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
+        }
+
+        .color-btn:hover,
+        .color-btn:focus-visible {
+            transform: translateY(-2px);
+            outline: 3px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .color-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .color-btn:disabled {
+            cursor: not-allowed;
+            filter: grayscale(0.55);
+            opacity: 0.45;
+            transform: none;
+        }
+
+        .rules {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.45;
+        }
+
+        .rules strong {
+            color: var(--text);
+        }
+
+        .meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .meta-item {
+            padding: 12px 10px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.07);
+            text-align: center;
+        }
+
+        .meta-item strong,
+        .meta-item span {
+            display: block;
+        }
+
+        .meta-item strong {
+            font-size: 1.2rem;
+        }
+
+        .meta-item span {
+            color: var(--muted);
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .toast {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            max-width: min(420px, calc(100vw - 32px));
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 18px;
+            background: rgba(15, 20, 37, 0.94);
+            box-shadow: var(--shadow);
+            color: var(--text);
+            transform: translateY(18px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 180ms ease, transform 180ms ease;
+            z-index: 20;
+        }
+
+        .toast.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 900px) {
+            .hero,
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                align-items: start;
+            }
+
+            .install-hint {
+                justify-self: start;
+            }
+
+            .side-card {
+                order: -1;
+            }
+
+            .board-wrap {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .app {
+                padding-inline: 10px;
+            }
+
+            .hero p {
+                font-size: 0.96rem;
+            }
+
+            .board-card,
+            .side-card {
+                border-radius: 20px;
+            }
+
+            .board-toolbar {
+                align-items: stretch;
+            }
+
+            .primary-actions {
+                justify-content: stretch;
+            }
+
+            .action-btn {
+                flex: 1;
+            }
+
+            .palette {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 7px;
+            }
+
+            .color-btn {
+                min-height: 44px;
+                border-radius: 14px;
+            }
+
+            .meta {
+                grid-template-columns: 1fr;
+            }
+
+            .cell::after {
+                content: "" !important;
+            }
         }
     </style>
 </head>
 <body>
-<div class="game">
-    <h1>🍪 КЛИКЕР</h1>
-    <div class="score-box">
-        <div class="score-label">Печенек (очки)</div>
-        <div class="score-value" id="scoreDisplay">0</div>
-    </div>
-    <div class="click-btn" id="clickButton">🍪</div>
+    <main class="app">
+        <section class="hero" aria-labelledby="game-title">
+            <div>
+                <p class="eyebrow">PWA game prototype</p>
+                <h1 id="game-title">ColorWars</h1>
+                <p>
+                    Захватывай соседние клетки выбором цвета. Побеждает игрок с максимальной территорией,
+                    когда поле заполнено или закончились раунды.
+                </p>
+            </div>
+            <div class="install-hint" id="installHint">Работает офлайн после первого запуска</div>
+        </section>
 
-    <div class="upgrade-area">
-        <div class="upgrade" id="upgradeAuto">
-            🤖 Автокликер<br>
-            <span id="autoPrice">50 🍪</span>
-        </div>
-        <div class="upgrade" id="upgradeMulti">
-            ✨ Умножитель<br>
-            <span id="multiPrice">100 🍪</span>
-        </div>
-    </div>
-    <button class="reset-btn" id="resetBtn">🔄 Новая игра</button>
-    <footer>👇 Нажми на печеньку<br>📱 Работает офлайн + можно установить на экран</footer>
-</div>
+        <section class="layout" aria-label="Игровая область">
+            <div class="board-card">
+                <div class="board-toolbar">
+                    <div class="status" aria-live="polite">
+                        <strong id="statusTitle">Твой ход</strong>
+                        <span id="statusText">Выбери цвет, чтобы расширить свою территорию.</span>
+                    </div>
+                    <div class="primary-actions">
+                        <button class="action-btn" id="undoButton" type="button">Отменить ход</button>
+                        <button class="action-btn primary" id="newGameButton" type="button">Новая карта</button>
+                    </div>
+                </div>
+                <div class="board-wrap">
+                    <div class="board" id="board" role="grid" aria-label="Поле ColorWars"></div>
+                </div>
+            </div>
 
-<script>
-    // --- Игровое состояние ---
-    let cookies = 0;
-    let autoClickerLevel = 0;      // сколько печенек в секунду (1 уровень = +1/сек)
-    let clickMultiplier = 1;        // множитель клика (1 = +1 печенька)
+            <aside class="side-card" aria-label="Панель игры">
+                <div class="panel-title">
+                    <h2>Матч</h2>
+                    <span class="round-pill" id="roundInfo">Раунд 1 / 32</span>
+                </div>
 
-    // Цены улучшений
-    let autoPrice = 50;
-    let multiPrice = 100;
+                <div class="score-list" id="scoreList"></div>
 
-    // Элементы DOM
-    const scoreSpan = document.getElementById('scoreDisplay');
-    const clickBtn = document.getElementById('clickButton');
-    const upgradeAutoDiv = document.getElementById('upgradeAuto');
-    const upgradeMultiDiv = document.getElementById('upgradeMulti');
-    const autoPriceSpan = document.getElementById('autoPrice');
-    const multiPriceSpan = document.getElementById('multiPrice');
-    const resetBtn = document.getElementById('resetBtn');
+                <h2>Выбор цвета</h2>
+                <div class="palette" id="palette" aria-label="Доступные цвета"></div>
 
-    // Функция обновления интерфейса (отрисовка цифр и цен)
-    function updateUI() {
-        scoreSpan.innerText = Math.floor(cookies);
-        autoPriceSpan.innerText = autoPrice + ' 🍪';
-        multiPriceSpan.innerText = multiPrice + ' 🍪';
-    }
+                <div class="rules">
+                    <div><strong>Как играть:</strong> твоя область подсвечена белой рамкой.</div>
+                    <div>Нажми цвет: твоя территория перекрасится и поглотит соприкасающиеся клетки этого цвета.</div>
+                    <div>Боты ходят после тебя и тоже могут отнимать пограничные клетки.</div>
+                </div>
 
-    // Сохранить в localStorage (чтобы не пропадало при закрытии)
-    function saveGame() {
-        const save = {
-            cookies: cookies,
-            autoClickerLevel: autoClickerLevel,
-            clickMultiplier: clickMultiplier,
-            autoPrice: autoPrice,
-            multiPrice: multiPrice
-        };
-        localStorage.setItem('clickerPWA', JSON.stringify(save));
-    }
+                <div class="meta" aria-label="Статистика">
+                    <div class="meta-item">
+                        <strong id="winsValue">0</strong>
+                        <span>Побед</span>
+                    </div>
+                    <div class="meta-item">
+                        <strong id="bestValue">0%</strong>
+                        <span>Лучший результат</span>
+                    </div>
+                    <div class="meta-item">
+                        <strong id="gamesValue">0</strong>
+                        <span>Игр</span>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </main>
 
-    // Загрузить игру
-    function loadGame() {
-        const raw = localStorage.getItem('clickerPWA');
-        if (!raw) return false;
-        try {
-            const data = JSON.parse(raw);
-            cookies = data.cookies || 0;
-            autoClickerLevel = data.autoClickerLevel || 0;
-            clickMultiplier = data.clickMultiplier || 1;
-            autoPrice = data.autoPrice || 50;
-            multiPrice = data.multiPrice || 100;
-            updateUI();
-            return true;
-        } catch(e) { return false; }
-    }
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    // Добавить печеньки и сохранить
-    function addCookies(amount) {
-        if (amount <= 0) return;
-        cookies += amount;
-        updateUI();
-        saveGame();
-    }
+    <script>
+        const BOARD_SIZE = 13;
+        const MAX_ROUNDS = 32;
+        const STORAGE_KEY = "colorwars-pwa-state-v1";
+        const STATS_KEY = "colorwars-pwa-stats-v1";
+        const COLORS = [
+            "#ff595e",
+            "#ffca3a",
+            "#8ac926",
+            "#1982c4",
+            "#6a4c93",
+            "#f15bb5"
+        ];
+        const PLAYERS = [
+            { id: 0, name: "Ты", label: "Игрок", color: "#ffffff", start: [0, 0] },
+            { id: 1, name: "Cyan AI", label: "Северо-восток", color: "#66e3ff", start: [BOARD_SIZE - 1, 0] },
+            { id: 2, name: "Rose AI", label: "Юго-запад", color: "#ff7aa8", start: [0, BOARD_SIZE - 1] },
+            { id: 3, name: "Lime AI", label: "Юго-восток", color: "#95ff70", start: [BOARD_SIZE - 1, BOARD_SIZE - 1] }
+        ];
 
-    // Купить автокликер (+1 печенька в секунду)
-    function buyAutoClicker() {
-        if (cookies >= autoPrice) {
-            cookies -= autoPrice;
-            autoClickerLevel++;
-            // Цена растёт: следующая на +25 печенек (лёгкая прогрессия)
-            autoPrice = Math.floor(autoPrice + 25);
-            updateUI();
-            saveGame();
-            return true;
-        } else {
-            // Визуальная обратная связь (покачивание кнопки)
-            const btn = upgradeAutoDiv;
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => btn.style.transform = '', 150);
-            return false;
+        const boardEl = document.getElementById("board");
+        const paletteEl = document.getElementById("palette");
+        const scoreListEl = document.getElementById("scoreList");
+        const roundInfoEl = document.getElementById("roundInfo");
+        const statusTitleEl = document.getElementById("statusTitle");
+        const statusTextEl = document.getElementById("statusText");
+        const newGameButton = document.getElementById("newGameButton");
+        const undoButton = document.getElementById("undoButton");
+        const winsValueEl = document.getElementById("winsValue");
+        const bestValueEl = document.getElementById("bestValue");
+        const gamesValueEl = document.getElementById("gamesValue");
+        const toastEl = document.getElementById("toast");
+        const installHintEl = document.getElementById("installHint");
+
+        let cells = [];
+        let currentRound = 1;
+        let gameOver = false;
+        let isResolvingAi = false;
+        let previousSnapshot = null;
+        let toastTimer = 0;
+        let stats = loadStats();
+
+        function randomColorIndex() {
+            return Math.floor(Math.random() * COLORS.length);
         }
-    }
 
-    // Купить множитель клика (+1 к множителю)
-    function buyMultiplier() {
-        if (cookies >= multiPrice) {
-            cookies -= multiPrice;
-            clickMultiplier++;
-            multiPrice = Math.floor(multiPrice * 1.4);   // цена сильно растёт
-            updateUI();
-            saveGame();
-            return true;
-        } else {
-            const btn = upgradeMultiDiv;
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => btn.style.transform = '', 150);
-            return false;
+        function indexOf(x, y) {
+            return y * BOARD_SIZE + x;
         }
-    }
 
-    // Сброс всей игры
-    function resetGame() {
-        if (confirm('♻️ Сбросить прогресс? Вся статистика удалится.')) {
-            cookies = 0;
-            autoClickerLevel = 0;
-            clickMultiplier = 1;
-            autoPrice = 50;
-            multiPrice = 100;
-            updateUI();
-            saveGame();
-        }
-    }
-
-    // --- Игровой цикл для автокликера ---
-    let lastTimestamp = 0;
-    function gameLoop(now) {
-        requestAnimationFrame(gameLoop);
-        // авто-клик раз в секунду (на основе реального времени)
-        if (autoClickerLevel > 0) {
-            const nowSec = Date.now() / 1000;
-            if (!lastTimestamp) lastTimestamp = nowSec;
-            const delta = nowSec - lastTimestamp;
-            if (delta >= 1.0) {
-                const totalAuto = autoClickerLevel;   // каждый уровень даёт +1 печеньку/сек
-                if (totalAuto > 0) {
-                    cookies += totalAuto;
-                    updateUI();
-                    saveGame();
-                }
-                lastTimestamp = nowSec;
+        function getCell(x, y, source = cells) {
+            if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) {
+                return null;
             }
-        } else {
-            lastTimestamp = Date.now() / 1000;
+            return source[indexOf(x, y)];
         }
-    }
 
-    // --- Обработчики для касаний и кликов ---
-    function onClickCookie(e) {
-        // Эффект нажатия на печеньку
-        const btn = clickBtn;
-        btn.style.transform = 'translateY(6px)';
-        setTimeout(() => btn.style.transform = '', 100);
+        function neighborsOf(x, y) {
+            return [
+                [x + 1, y],
+                [x - 1, y],
+                [x, y + 1],
+                [x, y - 1]
+            ].filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < BOARD_SIZE && ny < BOARD_SIZE);
+        }
 
-        let gain = 1 * clickMultiplier;
-        addCookies(gain);
+        function createBoard() {
+            const nextCells = [];
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    nextCells.push({
+                        x,
+                        y,
+                        color: randomColorIndex(),
+                        owner: -1
+                    });
+                }
+            }
 
-        // крошечный визуал + цифра
-        const floating = document.createElement('div');
-        floating.innerText = `+${gain}`;
-        floating.style.position = 'fixed';
-        floating.style.left = (e.clientX || e.touches?.[0]?.clientX || 160) + 'px';
-        floating.style.top = (e.clientY || e.touches?.[0]?.clientY || 300) + 'px';
-        floating.style.fontSize = '1.7rem';
-        floating.style.fontWeight = 'bold';
-        floating.style.color = '#FFB347';
-        floating.style.pointerEvents = 'none';
-        floating.style.textShadow = '0 0 3px black';
-        floating.style.zIndex = '999';
-        floating.style.transition = 'all 0.6s ease-out';
-        document.body.appendChild(floating);
-        setTimeout(() => { floating.style.opacity = '0'; floating.style.transform = 'translateY(-40px)'; }, 20);
-        setTimeout(() => floating.remove(), 700);
-    }
+            PLAYERS.forEach((player) => {
+                const [sx, sy] = player.start;
+                const anchorColor = player.id % COLORS.length;
+                const xDirection = sx === 0 ? 1 : -1;
+                const yDirection = sy === 0 ? 1 : -1;
+                [
+                    [sx, sy],
+                    [sx + xDirection, sy],
+                    [sx, sy + yDirection],
+                    [sx + xDirection, sy + yDirection]
+                ].forEach(([x, y]) => {
+                    const cell = getCell(x, y, nextCells);
+                    if (cell) {
+                        cell.owner = player.id;
+                        cell.color = anchorColor;
+                    }
+                });
+            });
 
-    // --- PWA регистрация service worker ---
-    function registerSW() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(err => {
-                console.log('⚠️ SW регистрация не удалась (возможно просто нет sw.js)');
+            return nextCells;
+        }
+
+        function snapshot() {
+            return {
+                cells: cells.map((cell) => ({ ...cell })),
+                currentRound,
+                gameOver
+            };
+        }
+
+        function restoreSnapshot(saved) {
+            if (!saved) {
+                return;
+            }
+            cells = saved.cells.map((cell) => ({ ...cell }));
+            currentRound = saved.currentRound;
+            gameOver = saved.gameOver;
+            previousSnapshot = null;
+            isResolvingAi = false;
+            saveGame();
+            render();
+            showToast("Ход отменён. Попробуй другой цвет.");
+        }
+
+        function serializeGame() {
+            return JSON.stringify({ cells, currentRound, gameOver });
+        }
+
+        function saveGame() {
+            localStorage.setItem(STORAGE_KEY, serializeGame());
+        }
+
+        function loadGame() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) {
+                    return false;
+                }
+                const saved = JSON.parse(raw);
+                if (!Array.isArray(saved.cells) || saved.cells.length !== BOARD_SIZE * BOARD_SIZE) {
+                    return false;
+                }
+                cells = saved.cells.map((cell) => ({
+                    x: Number(cell.x),
+                    y: Number(cell.y),
+                    color: Number(cell.color),
+                    owner: Number(cell.owner)
+                }));
+                currentRound = Number(saved.currentRound) || 1;
+                gameOver = Boolean(saved.gameOver);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function loadStats() {
+            try {
+                const raw = localStorage.getItem(STATS_KEY);
+                if (!raw) {
+                    return { wins: 0, best: 0, games: 0 };
+                }
+                const parsed = JSON.parse(raw);
+                return {
+                    wins: Number(parsed.wins) || 0,
+                    best: Number(parsed.best) || 0,
+                    games: Number(parsed.games) || 0
+                };
+            } catch (error) {
+                return { wins: 0, best: 0, games: 0 };
+            }
+        }
+
+        function saveStats() {
+            localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+        }
+
+        function territoryCounts(source = cells) {
+            const counts = PLAYERS.map(() => 0);
+            source.forEach((cell) => {
+                if (cell.owner >= 0) {
+                    counts[cell.owner] += 1;
+                }
+            });
+            return counts;
+        }
+
+        function playerColor(playerId, source = cells) {
+            const owned = source.find((cell) => cell.owner === playerId);
+            return owned ? owned.color : playerId % COLORS.length;
+        }
+
+        function ownerAt(x, y) {
+            const cell = getCell(x, y);
+            return cell ? cell.owner : -1;
+        }
+
+        function isFrontierCell(cell) {
+            if (cell.owner === 0) {
+                return false;
+            }
+            return neighborsOf(cell.x, cell.y).some(([nx, ny]) => ownerAt(nx, ny) === 0);
+        }
+
+        function floodForPlayer(playerId, colorIndex, source = cells) {
+            const nextCells = source.map((cell) => ({ ...cell }));
+            const queue = [];
+            const visited = new Set();
+            let captured = 0;
+            let stolen = 0;
+
+            nextCells.forEach((cell) => {
+                if (cell.owner === playerId) {
+                    cell.color = colorIndex;
+                    queue.push([cell.x, cell.y]);
+                    visited.add(indexOf(cell.x, cell.y));
+                }
+            });
+
+            while (queue.length) {
+                const [x, y] = queue.shift();
+                neighborsOf(x, y).forEach(([nx, ny]) => {
+                    const key = indexOf(nx, ny);
+                    if (visited.has(key)) {
+                        return;
+                    }
+                    const neighbor = getCell(nx, ny, nextCells);
+                    if (!neighbor || neighbor.color !== colorIndex) {
+                        return;
+                    }
+                    visited.add(key);
+                    if (neighbor.owner !== playerId) {
+                        if (neighbor.owner >= 0) {
+                            stolen += 1;
+                        }
+                        captured += 1;
+                        neighbor.owner = playerId;
+                        neighbor.color = colorIndex;
+                    }
+                    queue.push([nx, ny]);
+                });
+            }
+
+            return { nextCells, captured, stolen };
+        }
+
+        function legalColorsFor(playerId, source = cells) {
+            const ownColor = playerColor(playerId, source);
+            return COLORS.map((_, index) => index).filter((index) => index !== ownColor);
+        }
+
+        function chooseAiColor(playerId) {
+            const legal = legalColorsFor(playerId);
+            let bestColor = legal[0];
+            let bestScore = -Infinity;
+
+            legal.forEach((colorIndex) => {
+                const result = floodForPlayer(playerId, colorIndex);
+                const counts = territoryCounts(result.nextCells);
+                const score = result.captured + result.stolen * 1.7 + counts[playerId] * 0.04 + Math.random() * 0.25;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestColor = colorIndex;
+                }
+            });
+
+            return bestColor;
+        }
+
+        function applyMove(playerId, colorIndex) {
+            const result = floodForPlayer(playerId, colorIndex);
+            cells = result.nextCells;
+            return result;
+        }
+
+        function handleHumanMove(colorIndex) {
+            if (gameOver || isResolvingAi || !legalColorsFor(0).includes(colorIndex)) {
+                return;
+            }
+
+            previousSnapshot = snapshot();
+            const result = applyMove(0, colorIndex);
+            render();
+
+            if (checkGameOver()) {
+                return;
+            }
+
+            const message = result.captured
+                ? `Ты захватил ${result.captured} ${pluralize(result.captured, ["клетку", "клетки", "клеток"])}.`
+                : "Цвет изменён, но новых клеток рядом не оказалось.";
+            showToast(message);
+            runAiTurns();
+        }
+
+        async function runAiTurns() {
+            isResolvingAi = true;
+            statusTitleEl.textContent = "Ход соперников";
+            statusTextEl.textContent = "Боты оценивают соседние цвета...";
+            updatePaletteState();
+
+            for (const player of PLAYERS.slice(1)) {
+                if (gameOver) {
+                    break;
+                }
+                await wait(260);
+                const colorIndex = chooseAiColor(player.id);
+                applyMove(player.id, colorIndex);
+                render();
+                checkGameOver(false);
+            }
+
+            if (!gameOver) {
+                currentRound += 1;
+                checkGameOver();
+            }
+
+            isResolvingAi = false;
+            render();
+            saveGame();
+        }
+
+        function checkGameOver(shouldRender = true) {
+            const counts = territoryCounts();
+            const claimed = counts.reduce((sum, count) => sum + count, 0);
+            const finished = claimed === cells.length || currentRound > MAX_ROUNDS;
+            if (!finished) {
+                saveGame();
+                return false;
+            }
+
+            gameOver = true;
+            const winnerId = counts
+                .map((count, id) => ({ id, count }))
+                .sort((a, b) => b.count - a.count)[0].id;
+            const playerPercent = Math.round((counts[0] / cells.length) * 100);
+
+            stats.games += 1;
+            stats.best = Math.max(stats.best, playerPercent);
+            if (winnerId === 0) {
+                stats.wins += 1;
+            }
+            saveStats();
+            saveGame();
+
+            const title = winnerId === 0 ? "Победа!" : `Победил ${PLAYERS[winnerId].name}`;
+            const text = `Твой результат: ${playerPercent}% территории. Нажми "Новая карта", чтобы начать заново.`;
+            statusTitleEl.textContent = title;
+            statusTextEl.textContent = text;
+            showToast(`${title} ${text}`);
+
+            if (shouldRender) {
+                render();
+            }
+            return true;
+        }
+
+        function wait(ms) {
+            return new Promise((resolve) => window.setTimeout(resolve, ms));
+        }
+
+        function pluralize(value, variants) {
+            const mod10 = value % 10;
+            const mod100 = value % 100;
+            if (mod10 === 1 && mod100 !== 11) {
+                return variants[0];
+            }
+            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+                return variants[1];
+            }
+            return variants[2];
+        }
+
+        function renderBoard() {
+            const fragment = document.createDocumentFragment();
+            cells.forEach((cell) => {
+                const tile = document.createElement("div");
+                tile.className = "cell";
+                tile.setAttribute("role", "gridcell");
+                tile.dataset.owner = String(cell.owner);
+                tile.dataset.frontier = String(isFrontierCell(cell));
+                tile.style.setProperty("--cell-color", COLORS[cell.color]);
+                tile.title = cell.owner >= 0
+                    ? `${PLAYERS[cell.owner].name}: ${COLORS[cell.color]}`
+                    : `Свободная клетка: ${COLORS[cell.color]}`;
+                fragment.appendChild(tile);
+            });
+            boardEl.replaceChildren(fragment);
+        }
+
+        function renderScores() {
+            const counts = territoryCounts();
+            const fragment = document.createDocumentFragment();
+            PLAYERS.forEach((player) => {
+                const count = counts[player.id];
+                const percent = Math.round((count / cells.length) * 100);
+                const row = document.createElement("div");
+                row.className = "score-row";
+                row.style.setProperty("--player-color", player.color);
+                row.style.setProperty("--score-width", `${percent}%`);
+                row.innerHTML = `
+                    <span class="player-dot" aria-hidden="true"></span>
+                    <span class="score-name">
+                        <strong>${player.name}</strong>
+                        <span>${player.label}</span>
+                    </span>
+                    <span class="score-value">${percent}%</span>
+                    <span class="progress" aria-hidden="true"><span></span></span>
+                `;
+                fragment.appendChild(row);
+            });
+            scoreListEl.replaceChildren(fragment);
+        }
+
+        function renderPalette() {
+            const legal = new Set(legalColorsFor(0));
+            const fragment = document.createDocumentFragment();
+            COLORS.forEach((color, index) => {
+                const button = document.createElement("button");
+                button.className = "color-btn";
+                button.type = "button";
+                button.style.setProperty("--choice-color", color);
+                button.disabled = gameOver || isResolvingAi || !legal.has(index);
+                button.setAttribute("aria-label", `Выбрать цвет ${index + 1}`);
+                button.addEventListener("click", () => handleHumanMove(index));
+                fragment.appendChild(button);
+            });
+            paletteEl.replaceChildren(fragment);
+        }
+
+        function updatePaletteState() {
+            Array.from(paletteEl.children).forEach((button, index) => {
+                button.disabled = gameOver || isResolvingAi || !legalColorsFor(0).includes(index);
             });
         }
-    }
 
-    // --- Инициализация и привязка событий ---
-    function init() {
-        loadGame();
-        updateUI();
+        function renderStats() {
+            winsValueEl.textContent = String(stats.wins);
+            bestValueEl.textContent = `${stats.best}%`;
+            gamesValueEl.textContent = String(stats.games);
+        }
 
-        // события для клика по печеньке (мышь и тач)
-        clickBtn.addEventListener('click', onClickCookie);
-        clickBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            onClickCookie(e);
-        });
+        function renderStatus() {
+            roundInfoEl.textContent = `Раунд ${Math.min(currentRound, MAX_ROUNDS)} / ${MAX_ROUNDS}`;
+            undoButton.disabled = !previousSnapshot || isResolvingAi || gameOver;
 
-        upgradeAutoDiv.addEventListener('click', buyAutoClicker);
-        upgradeAutoDiv.addEventListener('touchstart', (e) => { e.preventDefault(); buyAutoClicker(); });
+            if (gameOver) {
+                return;
+            }
+            if (isResolvingAi) {
+                statusTitleEl.textContent = "Ход соперников";
+                statusTextEl.textContent = "Боты выбирают цвета для атаки по границам.";
+                return;
+            }
 
-        upgradeMultiDiv.addEventListener('click', buyMultiplier);
-        upgradeMultiDiv.addEventListener('touchstart', (e) => { e.preventDefault(); buyMultiplier(); });
+            const counts = territoryCounts();
+            const percent = Math.round((counts[0] / cells.length) * 100);
+            statusTitleEl.textContent = "Твой ход";
+            statusTextEl.textContent = `Сейчас у тебя ${percent}% поля. Выбери цвет, который касается твоей границы.`;
+        }
 
-        resetBtn.addEventListener('click', resetGame);
-        resetBtn.addEventListener('touchstart', (e) => { e.preventDefault(); resetGame(); });
+        function render() {
+            renderBoard();
+            renderScores();
+            renderPalette();
+            renderStats();
+            renderStatus();
+        }
 
-        // запускаем игровой цикл
-        requestAnimationFrame(gameLoop);
-        // пробуем PWA регистрацию
-        registerSW();
-    }
+        function showToast(message) {
+            window.clearTimeout(toastTimer);
+            toastEl.textContent = message;
+            toastEl.classList.add("visible");
+            toastTimer = window.setTimeout(() => {
+                toastEl.classList.remove("visible");
+            }, 2600);
+        }
 
-    init();
-</script>
+        function startNewGame() {
+            cells = createBoard();
+            currentRound = 1;
+            gameOver = false;
+            isResolvingAi = false;
+            previousSnapshot = null;
+            saveGame();
+            render();
+            showToast("Новая карта готова. Начинай с выбора цвета.");
+        }
+
+        function registerServiceWorker() {
+            if (!("serviceWorker" in navigator)) {
+                installHintEl.textContent = "Service Worker не поддерживается этим браузером";
+                return;
+            }
+
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("/sw.js")
+                    .then(() => {
+                        installHintEl.textContent = "PWA готова: можно установить и играть офлайн";
+                    })
+                    .catch(() => {
+                        installHintEl.textContent = "Игра запущена, офлайн-кэш пока недоступен";
+                    });
+            });
+        }
+
+        function init() {
+            if (!loadGame()) {
+                cells = createBoard();
+                saveGame();
+            }
+            render();
+            registerServiceWorker();
+
+            newGameButton.addEventListener("click", startNewGame);
+            undoButton.addEventListener("click", () => restoreSnapshot(previousSnapshot));
+        }
+
+        init();
+    </script>
 </body>
 </html>
