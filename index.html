@@ -205,7 +205,10 @@
         .cell {
             position: relative;
             min-width: 0;
+            padding: 0;
+            border: 0;
             border-radius: clamp(7px, 1.1vw, 13px);
+            appearance: none;
             background: var(--cell-color);
             box-shadow:
                 inset 0 0 0 1px rgba(255, 255, 255, 0.2),
@@ -331,11 +334,37 @@
             background: var(--current-color);
         }
 
+        .palette-panel {
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .palette-heading {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .palette-heading h2 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .palette-heading span {
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
         .palette {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 8px;
-            margin: 10px 0 18px;
+            margin: 0;
         }
 
         .color-btn {
@@ -517,6 +546,13 @@
                 <div class="board-wrap">
                     <div class="board" id="board" role="grid" aria-label="Поле ColorWars"></div>
                 </div>
+                <div class="palette-panel" aria-label="Выбор цвета">
+                    <div class="palette-heading">
+                        <h2>Выбор цвета</h2>
+                        <span>Нажми цвет снизу или тапни плитку на поле</span>
+                    </div>
+                    <div class="palette" id="palette" aria-label="Доступные цвета"></div>
+                </div>
             </div>
 
             <aside class="side-card" aria-label="Панель игры">
@@ -527,13 +563,11 @@
 
                 <div class="score-list" id="scoreList"></div>
 
-                <h2>Цвет хода</h2>
-                <div class="palette" id="palette" aria-label="Доступные цвета"></div>
-
                 <div class="rules">
                     <div><strong>Цель:</strong> первым захватить больше 50% поля.</div>
-                    <div><strong>Ход:</strong> все твои плитки перекрашиваются, а соседние плитки такого же цвета становятся твоими.</div>
+                    <div><strong>Ход:</strong> выбери цвет снизу или тапни плитку нужного цвета на поле.</div>
                     <div><strong>Ограничение:</strong> нельзя выбрать свой текущий цвет или текущий цвет соперника.</div>
+                    <div><strong>Захват:</strong> все твои плитки перекрашиваются, а соседние плитки такого же цвета становятся твоими.</div>
                     <div><strong>Окружение:</strong> полностью закрытая твоим цветом область захватывается целиком, независимо от цветов внутри.</div>
                 </div>
 
@@ -1111,8 +1145,9 @@
             const fragment = document.createDocumentFragment();
 
             cells.forEach((cell) => {
-                const tile = document.createElement("div");
+                const tile = document.createElement("button");
                 tile.className = "cell";
+                tile.type = "button";
                 tile.setAttribute("role", "gridcell");
                 tile.dataset.owner = String(cell.owner);
                 tile.dataset.frontier = String(isFrontierCell(cell));
@@ -1120,6 +1155,8 @@
 
                 const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
                 tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
+                tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
+                tile.addEventListener("click", () => handleHumanMove(cell.color));
                 fragment.appendChild(tile);
             });
 
