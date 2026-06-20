@@ -568,7 +568,7 @@
                     <div><strong>Ход:</strong> выбери цвет снизу или тапни плитку нужного цвета на поле.</div>
                     <div><strong>Ограничение:</strong> нельзя выбрать свой текущий цвет или текущий цвет соперника.</div>
                     <div><strong>Захват:</strong> все твои плитки перекрашиваются, а соседние плитки такого же цвета становятся твоими.</div>
-                    <div><strong>Окружение:</strong> полностью закрытая твоим цветом область захватывается целиком, независимо от цветов внутри.</div>
+                    <div><strong>Окружение:</strong> замкнутая область захватывается целиком, даже если часть границы проходит по краю поля.</div>
                 </div>
 
                 <div class="meta" aria-label="Статистика матча">
@@ -593,9 +593,10 @@
 
     <script>
         const BOARD_SIZE = 13;
-        const START_CLUSTER_SIZE = 2;
+        const START_MIN_SEEDS = 2;
+        const START_MAX_SEEDS = 6;
         const WIN_THRESHOLD = Math.floor((BOARD_SIZE * BOARD_SIZE) / 2) + 1;
-        const STORAGE_KEY = "colorwars-duel-state-v2";
+        const STORAGE_KEY = "colorwars-duel-state-v3";
         const COLORS = [
             { name: "Красный", value: "#e53935" },
             { name: "Синий", value: "#1e63ff" },
@@ -715,19 +716,78 @@
             render();
         }
 
-        function startingPositions(corner) {
-            const positions = [];
+        function cornerPosition(corner) {
             const fromLeft = corner.includes("left");
             const fromTop = corner.includes("top");
-            const startX = fromLeft ? 0 : BOARD_SIZE - START_CLUSTER_SIZE;
-            const startY = fromTop ? 0 : BOARD_SIZE - START_CLUSTER_SIZE;
+            return [
+                fromLeft ? 0 : BOARD_SIZE - 1,
+                fromTop ? 0 : BOARD_SIZE - 1
+            ];
+        }
 
-            for (let y = 0; y < START_CLUSTER_SIZE; y++) {
-                for (let x = 0; x < START_CLUSTER_SIZE; x++) {
-                    positions.push([startX + x, startY + y]);
+        function randomStartingSeeds(corner) {
+            const [startX, startY] = cornerPosition(corner);
+            const targetSize = START_MIN_SEEDS
+                + Math.floor(Math.random() * (START_MAX_SEEDS - START_MIN_SEEDS + 1));
+            const seeds = [[startX, startY]];
+            const used = new Set([indexOf(startX, startY)]);
+
+            while (seeds.length < targetSize) {
+                const candidates = [];
+                seeds.forEach(([x, y]) => {
+                    neighborsOf(x, y).forEach(([nx, ny]) => {
+                        const key = indexOf(nx, ny);
+                        if (!used.has(key)) {
+                            candidates.push([nx, ny]);
+                        }
+                    });
+                });
+
+                if (!candidates.length) {
+                    break;
                 }
+
+                const [nextX, nextY] = candidates[Math.floor(Math.random() * candidates.length)];
+                used.add(indexOf(nextX, nextY));
+                seeds.push([nextX, nextY]);
             }
-            return positions;
+
+            return seeds;
+        }
+
+        function claimStartingRegion(playerId, corner, colorIndex, source) {
+            const queue = [];
+            const visited = new Set();
+
+            randomStartingSeeds(corner).forEach(([x, y]) => {
+                const cell = getCell(x, y, source);
+                cell.owner = playerId;
+                cell.color = colorIndex;
+                queue.push([x, y]);
+                visited.add(indexOf(x, y));
+            });
+
+            while (queue.length) {
+                const [x, y] = queue.shift();
+                neighborsOf(x, y).forEach(([nx, ny]) => {
+                    const key = indexOf(nx, ny);
+                    if (visited.has(key)) {
+                        return;
+                    }
+
+                    const neighbor = getCell(nx, ny, source);
+                    if (!neighbor || neighbor.color !== colorIndex) {
+                        return;
+                    }
+
+                    visited.add(key);
+                    neighbor.owner = playerId;
+                    neighbor.color = colorIndex;
+                    queue.push([nx, ny]);
+                });
+            }
+
+            return visited.size;
         }
 
         function createBoard() {
@@ -748,11 +808,7 @@
             const startingColors = [humanColor, computerColor];
 
             PLAYERS.forEach((player) => {
-                startingPositions(player.corner).forEach(([x, y]) => {
-                    const cell = getCell(x, y, nextCells);
-                    cell.owner = player.id;
-                    cell.color = startingColors[player.id];
-                });
+                claimStartingRegion(player.id, player.corner, startingColors[player.id], nextCells);
             });
 
             return nextCells;
@@ -897,8 +953,52 @@
             return { capturedByColor, stolenByColor };
         }
 
+        function edgeMaskForCell(cell) {
+            let mask = 0;
+            if (cell.y === 0) {
+                mask |= 1;
+            }
+            if (cell.x === BOARD_SIZE - 1) {
+                mask |= 2;
+            }
+            if (cell.y === BOARD_SIZE - 1) {
+                mask |= 4;
+            }
+            if (cell.x === 0) {
+                mask |= 8;
+            }
+            return mask;
+        }
+
+        function bitCount(value) {
+            let count = 0;
+            let nextValue = value;
+            while (nextValue) {
+                count += nextValue & 1;
+                nextValue >>= 1;
+            }
+            return count;
+        }
+
+        function captureSurroundedComponent(component, playerId, colorIndex) {
+            let capturedBySurround = 0;
+            let stolenBySurround = 0;
+
+            component.cells.forEach((capturedCell) => {
+                if (capturedCell.owner === opponentOf(playerId)) {
+                    stolenBySurround += 1;
+                }
+                capturedCell.owner = playerId;
+                capturedCell.color = colorIndex;
+                capturedBySurround += 1;
+            });
+
+            return { capturedBySurround, stolenBySurround };
+        }
+
         function applySurroundCapture(playerId, colorIndex, source) {
             const visited = new Set();
+            const components = [];
             let capturedBySurround = 0;
             let stolenBySurround = 0;
 
@@ -910,18 +1010,14 @@
 
                 const component = [];
                 const queue = [[cell.x, cell.y]];
-                let touchesEdge = false;
-                let borderedOnlyByPlayer = true;
+                let edgeMask = 0;
                 visited.add(startKey);
 
                 while (queue.length) {
                     const [x, y] = queue.shift();
                     const current = getCell(x, y, source);
                     component.push(current);
-
-                    if (x === 0 || y === 0 || x === BOARD_SIZE - 1 || y === BOARD_SIZE - 1) {
-                        touchesEdge = true;
-                    }
+                    edgeMask |= edgeMaskForCell(current);
 
                     neighborsOf(x, y).forEach(([nx, ny]) => {
                         const neighbor = getCell(nx, ny, source);
@@ -940,25 +1036,40 @@
                     });
                 }
 
-                component.forEach((componentCell) => {
-                    neighborsOf(componentCell.x, componentCell.y).forEach(([nx, ny]) => {
-                        const neighbor = getCell(nx, ny, source);
-                        if (neighbor.owner !== playerId && !component.includes(neighbor)) {
-                            borderedOnlyByPlayer = false;
-                        }
-                    });
+                components.push({
+                    cells: component,
+                    edgeMask,
+                    edgeCount: bitCount(edgeMask)
                 });
+            });
 
-                if (!touchesEdge && borderedOnlyByPlayer) {
-                    component.forEach((capturedCell) => {
-                        if (capturedCell.owner === opponentOf(playerId)) {
-                            stolenBySurround += 1;
-                        }
-                        capturedCell.owner = playerId;
-                        capturedCell.color = colorIndex;
-                        capturedBySurround += 1;
-                    });
+            if (!components.length) {
+                return { capturedBySurround, stolenBySurround };
+            }
+
+            if (components.length === 1) {
+                if (components[0].edgeCount === 0) {
+                    const captured = captureSurroundedComponent(components[0], playerId, colorIndex);
+                    capturedBySurround += captured.capturedBySurround;
+                    stolenBySurround += captured.stolenBySurround;
                 }
+                return { capturedBySurround, stolenBySurround };
+            }
+
+            const exterior = components.reduce((best, component) => {
+                if (component.edgeCount !== best.edgeCount) {
+                    return component.edgeCount > best.edgeCount ? component : best;
+                }
+                return component.cells.length > best.cells.length ? component : best;
+            });
+
+            components.forEach((component) => {
+                if (component === exterior) {
+                    return;
+                }
+                const captured = captureSurroundedComponent(component, playerId, colorIndex);
+                capturedBySurround += captured.capturedBySurround;
+                stolenBySurround += captured.stolenBySurround;
             });
 
             return { capturedBySurround, stolenBySurround };
