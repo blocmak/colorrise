@@ -106,6 +106,155 @@
             white-space: nowrap;
         }
 
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .start-screen {
+            min-height: min(760px, calc(100vh - 40px));
+            display: none;
+            place-items: center;
+        }
+
+        .start-screen.active {
+            display: grid;
+        }
+
+        .menu-card {
+            width: min(520px, 100%);
+            padding: clamp(24px, 5vw, 42px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 32px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            text-align: center;
+            backdrop-filter: blur(18px);
+        }
+
+        .menu-card h1 {
+            margin-bottom: 12px;
+        }
+
+        .menu-card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .main-menu {
+            display: grid;
+            gap: 12px;
+            margin-top: 26px;
+        }
+
+        .menu-btn {
+            width: 100%;
+            padding: 16px 18px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 850;
+            letter-spacing: 0.02em;
+            transition: transform 120ms ease, background 120ms ease;
+        }
+
+        .menu-btn:hover,
+        .menu-btn:focus-visible {
+            background: rgba(255, 255, 255, 0.16);
+            outline: none;
+            transform: translateY(-1px);
+        }
+
+        .menu-btn.primary {
+            background: linear-gradient(135deg, #33d6ff, #ffcf5a);
+            color: #06101b;
+        }
+
+        .dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            background: rgba(5, 8, 20, 0.72);
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transition: opacity 160ms ease, visibility 160ms ease;
+            z-index: 40;
+        }
+
+        .dialog-backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        .dialog {
+            width: min(520px, 100%);
+            max-height: min(720px, calc(100vh - 36px));
+            overflow: auto;
+            padding: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 26px;
+            background: rgba(13, 18, 35, 0.96);
+            box-shadow: var(--shadow);
+        }
+
+        .dialog h2 {
+            margin: 0 0 12px;
+            font-size: 1.45rem;
+        }
+
+        .dialog p,
+        .dialog li {
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .dialog ol {
+            margin: 0 0 18px;
+            padding-left: 20px;
+        }
+
+        .settings-grid {
+            display: grid;
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .settings-field {
+            display: grid;
+            gap: 7px;
+            text-align: left;
+        }
+
+        .settings-field span {
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .settings-field input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font: inherit;
+        }
+
+        .dialog-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
         .layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 360px;
@@ -184,7 +333,7 @@
         }
 
         .board-wrap {
-            aspect-ratio: 1;
+            aspect-ratio: var(--board-ratio, 1);
             width: 100%;
             max-height: calc(100vh - 220px);
             min-height: 300px;
@@ -518,7 +667,7 @@
 
         .endgame-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 20px;
         }
@@ -683,6 +832,20 @@
 </head>
 <body>
     <main class="app">
+        <section class="screen start-screen active" id="startScreen" aria-labelledby="menu-title">
+            <div class="menu-card">
+                <p class="eyebrow">PWA duel prototype</p>
+                <h1 id="menu-title">ColorWars</h1>
+                <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
+                <nav class="main-menu" aria-label="Главное меню">
+                    <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
+                    <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
+                    <button class="menu-btn" id="menuRulesButton" type="button">Правила</button>
+                </nav>
+            </div>
+        </section>
+
+        <section class="screen" id="gameScreen" aria-label="Игра ColorWars">
         <section class="hero" aria-labelledby="game-title">
             <div>
                 <p class="eyebrow">PWA duel prototype</p>
@@ -703,12 +866,13 @@
                         <span id="statusText">Выбери цвет, отличный от своего и от цвета компьютера.</span>
                     </div>
                     <div class="actions">
+                        <button class="action-btn" id="backToMenuButton" type="button">Меню</button>
                         <button class="action-btn" id="undoButton" type="button">Откат</button>
                         <button class="action-btn" id="restartButton" type="button">Сначала на этом поле</button>
                         <button class="action-btn primary" id="newGameButton" type="button">Новое поле</button>
                     </div>
                 </div>
-                <div class="board-wrap">
+                <div class="board-wrap" id="boardWrap">
                     <div class="board" id="board" role="grid" aria-label="Поле ColorWars"></div>
                 </div>
                 <div class="palette-panel" aria-label="Выбор цвета">
@@ -752,7 +916,49 @@
                 </div>
             </aside>
         </section>
+        </section>
     </main>
+
+    <div class="dialog-backdrop" id="settingsDialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="dialog">
+            <h2 id="settingsTitle">Настройки</h2>
+            <p>Выберите размер игрового поля. Размер плиток автоматически подстроится под выбранную ширину и высоту.</p>
+            <div class="settings-grid">
+                <label class="settings-field" for="boardWidthInput">
+                    Количество плиток по горизонтали
+                    <span>Минимум 6, максимум 24.</span>
+                    <input id="boardWidthInput" type="number" min="6" max="24" step="1" inputmode="numeric">
+                </label>
+                <label class="settings-field" for="boardHeightInput">
+                    Количество плиток по вертикали
+                    <span>Минимум 6, максимум 24.</span>
+                    <input id="boardHeightInput" type="number" min="6" max="24" step="1" inputmode="numeric">
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <button class="action-btn" id="settingsCloseButton" type="button">Закрыть</button>
+                <button class="action-btn primary" id="settingsSaveButton" type="button">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-backdrop" id="rulesDialog" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+        <div class="dialog">
+            <h2 id="rulesTitle">Правила игры</h2>
+            <ol>
+                <li>Играют два участника: человек и компьютер.</li>
+                <li>Каждый игрок начинает в своём углу со случайной связной территорией одного цвета.</li>
+                <li>За ход выберите цвет снизу или тапните плитку такого цвета на поле.</li>
+                <li>Нельзя выбрать свой текущий цвет или цвет соперника.</li>
+                <li>Все ваши плитки перекрашиваются, а соседние плитки выбранного цвета становятся вашими.</li>
+                <li>Замкнутые области захватываются целиком, даже если часть границы проходит по краю поля.</li>
+                <li>Побеждает тот, кто первым захватит больше 50% поля.</li>
+            </ol>
+            <div class="dialog-actions">
+                <button class="action-btn primary" id="rulesCloseButton" type="button">Понятно</button>
+            </div>
+        </div>
+    </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="endgame-effect" id="endgameEffect" role="status" aria-live="assertive">
@@ -763,16 +969,20 @@
             <div class="endgame-actions">
                 <button class="action-btn primary" id="endgameNewGameButton" type="button">Новая игра</button>
                 <button class="action-btn" id="endgameReplayButton" type="button">Переиграть</button>
+                <button class="action-btn" id="endgameMenuButton" type="button">Меню</button>
             </div>
         </div>
     </div>
 
     <script>
-        const BOARD_SIZE = 13;
+        const DEFAULT_BOARD_WIDTH = 13;
+        const DEFAULT_BOARD_HEIGHT = 13;
+        const MIN_BOARD_SIZE = 6;
+        const MAX_BOARD_SIZE = 24;
         const START_MIN_SEEDS = 2;
         const START_MAX_SEEDS = 6;
-        const WIN_THRESHOLD = Math.floor((BOARD_SIZE * BOARD_SIZE) / 2) + 1;
-        const STORAGE_KEY = "colorwars-duel-state-v3";
+        const STORAGE_KEY = "colorwars-duel-state-v4";
+        const SETTINGS_KEY = "colorwars-duel-settings-v1";
         const COLORS = [
             { name: "Красный", value: "#e53935" },
             { name: "Синий", value: "#1e63ff" },
@@ -799,12 +1009,26 @@
             }
         ];
 
+        const startScreenEl = document.getElementById("startScreen");
+        const gameScreenEl = document.getElementById("gameScreen");
+        const menuStartButton = document.getElementById("menuStartButton");
+        const menuSettingsButton = document.getElementById("menuSettingsButton");
+        const menuRulesButton = document.getElementById("menuRulesButton");
+        const settingsDialogEl = document.getElementById("settingsDialog");
+        const rulesDialogEl = document.getElementById("rulesDialog");
+        const boardWidthInput = document.getElementById("boardWidthInput");
+        const boardHeightInput = document.getElementById("boardHeightInput");
+        const settingsCloseButton = document.getElementById("settingsCloseButton");
+        const settingsSaveButton = document.getElementById("settingsSaveButton");
+        const rulesCloseButton = document.getElementById("rulesCloseButton");
         const boardEl = document.getElementById("board");
+        const boardWrapEl = document.getElementById("boardWrap");
         const paletteEl = document.getElementById("palette");
         const scoreListEl = document.getElementById("scoreList");
         const turnInfoEl = document.getElementById("turnInfo");
         const statusTitleEl = document.getElementById("statusTitle");
         const statusTextEl = document.getElementById("statusText");
+        const backToMenuButton = document.getElementById("backToMenuButton");
         const undoButton = document.getElementById("undoButton");
         const restartButton = document.getElementById("restartButton");
         const newGameButton = document.getElementById("newGameButton");
@@ -818,8 +1042,11 @@
         const endgameTextEl = document.getElementById("endgameText");
         const endgameNewGameButton = document.getElementById("endgameNewGameButton");
         const endgameReplayButton = document.getElementById("endgameReplayButton");
+        const endgameMenuButton = document.getElementById("endgameMenuButton");
         const installHintEl = document.getElementById("installHint");
 
+        let boardWidth = DEFAULT_BOARD_WIDTH;
+        let boardHeight = DEFAULT_BOARD_HEIGHT;
         let cells = [];
         let initialSnapshot = null;
         let history = [];
@@ -842,12 +1069,80 @@
             return color;
         }
 
+        function clampDimension(value, fallback) {
+            const parsed = Number.parseInt(value, 10);
+            if (!Number.isFinite(parsed)) {
+                return fallback;
+            }
+            return Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE, parsed));
+        }
+
+        function boardArea() {
+            return boardWidth * boardHeight;
+        }
+
+        function winThreshold() {
+            return Math.floor(boardArea() / 2) + 1;
+        }
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (!raw) {
+                    return;
+                }
+                const saved = JSON.parse(raw);
+                boardWidth = clampDimension(saved.boardWidth, DEFAULT_BOARD_WIDTH);
+                boardHeight = clampDimension(saved.boardHeight, DEFAULT_BOARD_HEIGHT);
+            } catch (error) {
+                boardWidth = DEFAULT_BOARD_WIDTH;
+                boardHeight = DEFAULT_BOARD_HEIGHT;
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ boardWidth, boardHeight }));
+        }
+
+        function syncSettingsInputs() {
+            boardWidthInput.value = String(boardWidth);
+            boardHeightInput.value = String(boardHeight);
+        }
+
+        function saveSettingsFromInputs() {
+            boardWidth = clampDimension(boardWidthInput.value, DEFAULT_BOARD_WIDTH);
+            boardHeight = clampDimension(boardHeightInput.value, DEFAULT_BOARD_HEIGHT);
+            syncSettingsInputs();
+            saveSettings();
+            closeDialog(settingsDialogEl);
+            showToast(`Размер поля: ${boardWidth} x ${boardHeight}. Нажми "Старт", чтобы начать.`);
+        }
+
+        function showStartScreen() {
+            clearEndgameEffect();
+            gameScreenEl.classList.remove("active");
+            startScreenEl.classList.add("active");
+        }
+
+        function showGameScreen() {
+            startScreenEl.classList.remove("active");
+            gameScreenEl.classList.add("active");
+        }
+
+        function openDialog(dialogEl) {
+            dialogEl.classList.add("visible");
+        }
+
+        function closeDialog(dialogEl) {
+            dialogEl.classList.remove("visible");
+        }
+
         function indexOf(x, y) {
-            return y * BOARD_SIZE + x;
+            return y * boardWidth + x;
         }
 
         function getCell(x, y, source = cells) {
-            if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) {
+            if (x < 0 || y < 0 || x >= boardWidth || y >= boardHeight) {
                 return null;
             }
             return source[indexOf(x, y)];
@@ -859,7 +1154,7 @@
                 [x - 1, y],
                 [x, y + 1],
                 [x, y - 1]
-            ].filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < BOARD_SIZE && ny < BOARD_SIZE);
+            ].filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < boardWidth && ny < boardHeight);
         }
 
         function cloneCells(source = cells) {
@@ -868,6 +1163,8 @@
 
         function cloneSnapshot(snapshot) {
             return {
+                boardWidth: snapshot.boardWidth,
+                boardHeight: snapshot.boardHeight,
                 cells: snapshot.cells.map((cell) => ({ ...cell })),
                 currentPlayer: snapshot.currentPlayer,
                 moveNumber: snapshot.moveNumber,
@@ -878,6 +1175,8 @@
 
         function makeSnapshot() {
             return {
+                boardWidth,
+                boardHeight,
                 cells: cloneCells(),
                 currentPlayer,
                 moveNumber,
@@ -888,12 +1187,15 @@
 
         function restoreSnapshot(snapshot) {
             const restored = cloneSnapshot(snapshot);
+            boardWidth = restored.boardWidth;
+            boardHeight = restored.boardHeight;
             cells = restored.cells;
             currentPlayer = restored.currentPlayer;
             moveNumber = restored.moveNumber;
             gameOver = restored.gameOver;
             winnerId = restored.winnerId;
             aiThinking = false;
+            syncSettingsInputs();
             clearEndgameEffect();
             saveGame();
             render();
@@ -903,8 +1205,8 @@
             const fromLeft = corner.includes("left");
             const fromTop = corner.includes("top");
             return [
-                fromLeft ? 0 : BOARD_SIZE - 1,
-                fromTop ? 0 : BOARD_SIZE - 1
+                fromLeft ? 0 : boardWidth - 1,
+                fromTop ? 0 : boardHeight - 1
             ];
         }
 
@@ -975,8 +1277,8 @@
 
         function createBoard() {
             const nextCells = [];
-            for (let y = 0; y < BOARD_SIZE; y++) {
-                for (let x = 0; x < BOARD_SIZE; x++) {
+            for (let y = 0; y < boardHeight; y++) {
+                for (let x = 0; x < boardWidth; x++) {
                     nextCells.push({
                         x,
                         y,
@@ -999,6 +1301,8 @@
 
         function serializeGame() {
             return JSON.stringify({
+                boardWidth,
+                boardHeight,
                 cells,
                 initialSnapshot,
                 history,
@@ -1015,11 +1319,15 @@
 
         function isValidSavedCells(savedCells) {
             return Array.isArray(savedCells)
-                && savedCells.length === BOARD_SIZE * BOARD_SIZE
+                && savedCells.length === boardArea()
                 && savedCells.every((cell) => Number.isInteger(cell.x)
                     && Number.isInteger(cell.y)
                     && Number.isInteger(cell.color)
                     && Number.isInteger(cell.owner)
+                    && cell.x >= 0
+                    && cell.y >= 0
+                    && cell.x < boardWidth
+                    && cell.y < boardHeight
                     && cell.color >= 0
                     && cell.color < COLORS.length
                     && cell.owner >= -1
@@ -1027,10 +1335,25 @@
         }
 
         function normalizeSnapshot(snapshot) {
-            if (!snapshot || !isValidSavedCells(snapshot.cells)) {
+            if (!snapshot) {
+                return null;
+            }
+            const savedWidth = clampDimension(snapshot.boardWidth, boardWidth);
+            const savedHeight = clampDimension(snapshot.boardHeight, boardHeight);
+            const previousWidth = boardWidth;
+            const previousHeight = boardHeight;
+            boardWidth = savedWidth;
+            boardHeight = savedHeight;
+            const validCells = isValidSavedCells(snapshot.cells);
+            boardWidth = previousWidth;
+            boardHeight = previousHeight;
+
+            if (!validCells) {
                 return null;
             }
             return {
+                boardWidth: savedWidth,
+                boardHeight: savedHeight,
                 cells: snapshot.cells.map((cell) => ({ ...cell })),
                 currentPlayer: snapshot.currentPlayer === 1 ? 1 : 0,
                 moveNumber: Math.max(1, Number(snapshot.moveNumber) || 1),
@@ -1046,6 +1369,8 @@
                     return false;
                 }
                 const saved = JSON.parse(raw);
+                boardWidth = clampDimension(saved.boardWidth, DEFAULT_BOARD_WIDTH);
+                boardHeight = clampDimension(saved.boardHeight, DEFAULT_BOARD_HEIGHT);
                 if (!isValidSavedCells(saved.cells)) {
                     return false;
                 }
@@ -1141,10 +1466,10 @@
             if (cell.y === 0) {
                 mask |= 1;
             }
-            if (cell.x === BOARD_SIZE - 1) {
+            if (cell.x === boardWidth - 1) {
                 mask |= 2;
             }
-            if (cell.y === BOARD_SIZE - 1) {
+            if (cell.y === boardHeight - 1) {
                 mask |= 4;
             }
             if (cell.x === 0) {
@@ -1288,7 +1613,7 @@
             legal.forEach((colorIndex) => {
                 const result = simulateMove(1, colorIndex);
                 const counts = territoryCounts(result.nextCells);
-                const winsNow = counts[1] >= WIN_THRESHOLD ? 10000 : 0;
+                const winsNow = counts[1] >= winThreshold() ? 10000 : 0;
                 const deniesHuman = COLORS
                     .map((_, candidate) => candidate)
                     .filter((candidate) => legalColorsFor(0, result.nextCells).includes(candidate))
@@ -1317,7 +1642,7 @@
         function finishIfNeeded() {
             const counts = territoryCounts();
             const leader = counts[0] > counts[1] ? 0 : 1;
-            if (counts[leader] < WIN_THRESHOLD) {
+            if (counts[leader] < winThreshold()) {
                 return false;
             }
 
@@ -1383,11 +1708,13 @@
                 return;
             }
             history = [];
+            showGameScreen();
             restoreSnapshot(initialSnapshot);
             showToast("Партия возвращена к старту на том же поле.");
         }
 
         function startNewGame() {
+            showGameScreen();
             cells = createBoard();
             currentPlayer = 0;
             moveNumber = 1;
@@ -1417,7 +1744,8 @@
         }
 
         function renderBoard() {
-            boardEl.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, 1fr)`;
+            boardEl.style.gridTemplateColumns = `repeat(${boardWidth}, 1fr)`;
+            boardWrapEl.style.setProperty("--board-ratio", `${boardWidth} / ${boardHeight}`);
             const fragment = document.createDocumentFragment();
 
             cells.forEach((cell) => {
@@ -1509,7 +1837,7 @@
 
             turnInfoEl.textContent = `Ход ${moveNumber}`;
             historyValueEl.textContent = String(history.length);
-            targetValueEl.textContent = String(WIN_THRESHOLD);
+            targetValueEl.textContent = String(winThreshold());
             freeValueEl.textContent = String(free);
             undoButton.disabled = aiThinking || !history.length;
             restartButton.disabled = aiThinking || !initialSnapshot;
@@ -1527,7 +1855,7 @@
             }
 
             statusTitleEl.textContent = "Твой ход";
-            statusTextEl.textContent = `У тебя ${humanPercent}%, у компьютера ${computerPercent}%. Нужно ${WIN_THRESHOLD} плиток для победы.`;
+            statusTextEl.textContent = `У тебя ${humanPercent}%, у компьютера ${computerPercent}%. Нужно ${winThreshold()} плиток для победы.`;
         }
 
         function render() {
@@ -1627,21 +1955,26 @@
         }
 
         function init() {
-            if (!loadGame()) {
-                startNewGame();
-            } else {
-                aiThinking = false;
-                render();
-                if (!gameOver && currentPlayer === 1) {
-                    runComputerTurn();
-                }
-            }
+            loadSettings();
+            syncSettingsInputs();
+            showStartScreen();
 
+            menuStartButton.addEventListener("click", startNewGame);
+            menuSettingsButton.addEventListener("click", () => {
+                syncSettingsInputs();
+                openDialog(settingsDialogEl);
+            });
+            menuRulesButton.addEventListener("click", () => openDialog(rulesDialogEl));
+            settingsCloseButton.addEventListener("click", () => closeDialog(settingsDialogEl));
+            settingsSaveButton.addEventListener("click", saveSettingsFromInputs);
+            rulesCloseButton.addEventListener("click", () => closeDialog(rulesDialogEl));
+            backToMenuButton.addEventListener("click", showStartScreen);
             undoButton.addEventListener("click", undoMove);
             restartButton.addEventListener("click", restartSameField);
             newGameButton.addEventListener("click", startNewGame);
             endgameNewGameButton.addEventListener("click", startNewGame);
             endgameReplayButton.addEventListener("click", restartSameField);
+            endgameMenuButton.addEventListener("click", showStartScreen);
             registerServiceWorker();
         }
 
