@@ -4,23 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#101528">
-    <meta name="description" content="ColorWars PWA prototype: захватывай территорию выбором цветов.">
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <title>ColorWars · PWA prototype</title>
+    <meta name="description" content="ColorWars Duel: PWA-игра про захват цветных плиток.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <title>ColorWars Duel · PWA</title>
     <style>
         :root {
             color-scheme: dark;
             --bg: #0d1020;
-            --panel: rgba(18, 24, 45, 0.86);
-            --panel-strong: #151b32;
+            --panel: rgba(18, 24, 45, 0.88);
             --text: #f8fbff;
-            --muted: #9ba9c9;
+            --muted: #a6b2cf;
             --accent: #66e3ff;
-            --danger: #ff6b8a;
-            --good: #72f1a8;
+            --human: #ffffff;
+            --computer: #111827;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
             --radius: 24px;
-            --shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
         }
 
         * {
@@ -37,8 +36,8 @@
         body {
             margin: 0;
             background:
-                radial-gradient(circle at top left, rgba(102, 227, 255, 0.24), transparent 32rem),
-                radial-gradient(circle at bottom right, rgba(255, 107, 138, 0.22), transparent 30rem),
+                radial-gradient(circle at 14% 8%, rgba(102, 227, 255, 0.24), transparent 32rem),
+                radial-gradient(circle at 86% 92%, rgba(255, 122, 76, 0.2), transparent 30rem),
                 linear-gradient(135deg, #090d1a 0%, #101528 52%, #17113a 100%);
             color: var(--text);
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -52,6 +51,10 @@
             cursor: pointer;
         }
 
+        button:disabled {
+            cursor: not-allowed;
+        }
+
         .app {
             width: min(1180px, 100%);
             margin: 0 auto;
@@ -61,7 +64,7 @@
         .hero {
             display: grid;
             grid-template-columns: 1fr auto;
-            gap: 20px;
+            gap: 18px;
             align-items: end;
             margin-bottom: 18px;
         }
@@ -77,24 +80,24 @@
 
         h1 {
             margin: 0;
-            font-size: clamp(2.3rem, 8vw, 5.5rem);
+            font-size: clamp(2.35rem, 8vw, 5.2rem);
             line-height: 0.9;
             letter-spacing: -0.08em;
             text-transform: uppercase;
         }
 
         .hero p {
-            max-width: 760px;
+            max-width: 790px;
             margin: 12px 0 0;
             color: var(--muted);
-            font-size: clamp(1rem, 2vw, 1.18rem);
+            font-size: clamp(1rem, 2vw, 1.16rem);
             line-height: 1.55;
         }
 
         .install-hint {
             display: inline-flex;
-            gap: 8px;
             align-items: center;
+            gap: 8px;
             padding: 10px 14px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 999px;
@@ -105,7 +108,7 @@
 
         .layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 340px;
+            grid-template-columns: minmax(0, 1fr) 360px;
             gap: 18px;
             align-items: start;
         }
@@ -126,20 +129,19 @@
         .board-toolbar {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
             margin-bottom: 14px;
         }
 
         .status {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+            display: grid;
+            gap: 3px;
         }
 
         .status strong {
-            font-size: 1.05rem;
+            font-size: 1.08rem;
         }
 
         .status span {
@@ -147,34 +149,38 @@
             font-size: 0.9rem;
         }
 
-        .primary-actions {
+        .actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
             justify-content: flex-end;
+            gap: 8px;
         }
 
         .action-btn {
             padding: 10px 14px;
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.1);
-            transition: transform 120ms ease, background 120ms ease;
+            transition: transform 120ms ease, background 120ms ease, opacity 120ms ease;
         }
 
-        .action-btn:hover,
-        .action-btn:focus-visible {
+        .action-btn:hover:not(:disabled),
+        .action-btn:focus-visible:not(:disabled) {
             background: rgba(255, 255, 255, 0.16);
             outline: none;
         }
 
-        .action-btn:active {
+        .action-btn:active:not(:disabled) {
             transform: translateY(1px) scale(0.98);
         }
 
+        .action-btn:disabled {
+            opacity: 0.42;
+        }
+
         .action-btn.primary {
-            background: linear-gradient(135deg, #33d6ff, #836bff);
+            background: linear-gradient(135deg, #33d6ff, #ffcf5a);
             color: #06101b;
-            font-weight: 800;
+            font-weight: 850;
         }
 
         .board-wrap {
@@ -187,7 +193,6 @@
 
         .board {
             display: grid;
-            grid-template-columns: repeat(13, 1fr);
             gap: clamp(2px, 0.45vw, 5px);
             width: 100%;
             height: 100%;
@@ -210,17 +215,16 @@
 
         .cell[data-owner="0"] {
             box-shadow:
-                inset 0 0 0 3px #ffffff,
+                inset 0 0 0 3px var(--human),
                 inset 0 -10px 18px rgba(0, 0, 0, 0.18),
-                0 0 14px rgba(255, 255, 255, 0.36);
+                0 0 14px rgba(255, 255, 255, 0.34);
         }
 
-        .cell[data-owner="1"],
-        .cell[data-owner="2"],
-        .cell[data-owner="3"] {
+        .cell[data-owner="1"] {
             box-shadow:
-                inset 0 0 0 3px rgba(12, 17, 31, 0.86),
-                inset 0 -10px 18px rgba(0, 0, 0, 0.2);
+                inset 0 0 0 3px var(--computer),
+                inset 0 -10px 18px rgba(0, 0, 0, 0.2),
+                0 0 14px rgba(0, 0, 0, 0.24);
         }
 
         .cell[data-frontier="true"] {
@@ -229,30 +233,22 @@
 
         .cell::after {
             position: absolute;
-            inset: 24%;
+            inset: 26%;
             display: grid;
             place-items: center;
             border-radius: 50%;
-            background: rgba(7, 10, 22, 0.55);
+            background: rgba(7, 10, 22, 0.56);
             color: #fff;
-            font-size: clamp(0.62rem, 1.8vw, 0.92rem);
+            font-size: clamp(0.66rem, 1.8vw, 0.92rem);
             font-weight: 900;
             text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
         }
 
         .cell[data-owner="0"]::after {
-            content: "YOU";
+            content: "Я";
         }
 
         .cell[data-owner="1"]::after {
-            content: "AI";
-        }
-
-        .cell[data-owner="2"]::after {
-            content: "AI";
-        }
-
-        .cell[data-owner="3"]::after {
             content: "AI";
         }
 
@@ -263,14 +259,14 @@
         .panel-title {
             display: flex;
             justify-content: space-between;
-            gap: 12px;
             align-items: center;
+            gap: 12px;
             margin-bottom: 14px;
         }
 
         .panel-title h2 {
             margin: 0;
-            font-size: 1.05rem;
+            font-size: 1.08rem;
         }
 
         .round-pill {
@@ -279,12 +275,12 @@
             background: rgba(102, 227, 255, 0.12);
             color: var(--accent);
             font-size: 0.82rem;
-            font-weight: 800;
+            font-weight: 850;
         }
 
         .score-list {
             display: grid;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 18px;
         }
 
@@ -296,24 +292,17 @@
         }
 
         .player-dot {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.82);
-            background: var(--player-color);
-            box-shadow: 0 0 18px var(--player-color);
-        }
-
-        .score-name {
-            min-width: 0;
+            border: 3px solid var(--marker-color);
+            background: var(--current-color);
+            box-shadow: 0 0 18px var(--current-color);
         }
 
         .score-name strong,
         .score-name span {
             display: block;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
         .score-name span {
@@ -336,44 +325,42 @@
 
         .progress span {
             display: block;
-            height: 100%;
             width: var(--score-width);
+            height: 100%;
             border-radius: inherit;
-            background: var(--player-color);
+            background: var(--current-color);
         }
 
         .palette {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
             margin: 10px 0 18px;
         }
 
         .color-btn {
-            min-height: 58px;
-            border-radius: 18px;
+            min-height: 52px;
+            border-radius: 16px;
             background: var(--choice-color);
             box-shadow:
-                inset 0 0 0 2px rgba(255, 255, 255, 0.3),
+                inset 0 0 0 2px rgba(255, 255, 255, 0.32),
                 0 10px 22px rgba(0, 0, 0, 0.22);
             transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
         }
 
-        .color-btn:hover,
-        .color-btn:focus-visible {
+        .color-btn:hover:not(:disabled),
+        .color-btn:focus-visible:not(:disabled) {
             transform: translateY(-2px);
-            outline: 3px solid rgba(255, 255, 255, 0.35);
+            outline: 3px solid rgba(255, 255, 255, 0.34);
         }
 
-        .color-btn:active {
+        .color-btn:active:not(:disabled) {
             transform: translateY(1px) scale(0.98);
         }
 
         .color-btn:disabled {
-            cursor: not-allowed;
-            filter: grayscale(0.55);
-            opacity: 0.45;
-            transform: none;
+            filter: grayscale(0.72);
+            opacity: 0.38;
         }
 
         .rules {
@@ -412,12 +399,12 @@
         }
 
         .meta-item strong {
-            font-size: 1.2rem;
+            font-size: 1.18rem;
         }
 
         .meta-item span {
             color: var(--muted);
-            font-size: 0.74rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }
@@ -426,7 +413,7 @@
             position: fixed;
             right: 16px;
             bottom: 16px;
-            max-width: min(420px, calc(100vw - 32px));
+            max-width: min(440px, calc(100vw - 32px));
             padding: 14px 16px;
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 18px;
@@ -445,7 +432,7 @@
             opacity: 1;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 930px) {
             .hero,
             .layout {
                 grid-template-columns: 1fr;
@@ -468,7 +455,7 @@
             }
         }
 
-        @media (max-width: 520px) {
+        @media (max-width: 560px) {
             .app {
                 padding-inline: 10px;
             }
@@ -482,30 +469,16 @@
                 border-radius: 20px;
             }
 
-            .board-toolbar {
-                align-items: stretch;
-            }
-
-            .primary-actions {
+            .actions {
                 justify-content: stretch;
             }
 
             .action-btn {
-                flex: 1;
+                flex: 1 1 42%;
             }
 
             .palette {
-                grid-template-columns: repeat(6, 1fr);
-                gap: 7px;
-            }
-
-            .color-btn {
-                min-height: 44px;
-                border-radius: 14px;
-            }
-
-            .meta {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(4, 1fr);
             }
 
             .cell::after {
@@ -518,11 +491,11 @@
     <main class="app">
         <section class="hero" aria-labelledby="game-title">
             <div>
-                <p class="eyebrow">PWA game prototype</p>
+                <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="game-title">ColorWars</h1>
                 <p>
-                    Захватывай соседние клетки выбором цвета. Побеждает игрок с максимальной территорией,
-                    когда поле заполнено или закончились раунды.
+                    Два участника, семь цветов и поле из квадратных плиток. Меняй цвет своей территории,
+                    присоединяй соседние плитки и окружай области, чтобы первым забрать больше половины поля.
                 </p>
             </div>
             <div class="install-hint" id="installHint">Работает офлайн после первого запуска</div>
@@ -533,11 +506,12 @@
                 <div class="board-toolbar">
                     <div class="status" aria-live="polite">
                         <strong id="statusTitle">Твой ход</strong>
-                        <span id="statusText">Выбери цвет, чтобы расширить свою территорию.</span>
+                        <span id="statusText">Выбери цвет, отличный от своего и от цвета компьютера.</span>
                     </div>
-                    <div class="primary-actions">
-                        <button class="action-btn" id="undoButton" type="button">Отменить ход</button>
-                        <button class="action-btn primary" id="newGameButton" type="button">Новая карта</button>
+                    <div class="actions">
+                        <button class="action-btn" id="undoButton" type="button">Откат</button>
+                        <button class="action-btn" id="restartButton" type="button">Сначала на этом поле</button>
+                        <button class="action-btn primary" id="newGameButton" type="button">Новое поле</button>
                     </div>
                 </div>
                 <div class="board-wrap">
@@ -548,32 +522,33 @@
             <aside class="side-card" aria-label="Панель игры">
                 <div class="panel-title">
                     <h2>Матч</h2>
-                    <span class="round-pill" id="roundInfo">Раунд 1 / 32</span>
+                    <span class="round-pill" id="turnInfo">Ход 1</span>
                 </div>
 
                 <div class="score-list" id="scoreList"></div>
 
-                <h2>Выбор цвета</h2>
+                <h2>Цвет хода</h2>
                 <div class="palette" id="palette" aria-label="Доступные цвета"></div>
 
                 <div class="rules">
-                    <div><strong>Как играть:</strong> твоя область подсвечена белой рамкой.</div>
-                    <div>Нажми цвет: твоя территория перекрасится и поглотит соприкасающиеся клетки этого цвета.</div>
-                    <div>Боты ходят после тебя и тоже могут отнимать пограничные клетки.</div>
+                    <div><strong>Цель:</strong> первым захватить больше 50% поля.</div>
+                    <div><strong>Ход:</strong> все твои плитки перекрашиваются, а соседние плитки такого же цвета становятся твоими.</div>
+                    <div><strong>Ограничение:</strong> нельзя выбрать свой текущий цвет или текущий цвет соперника.</div>
+                    <div><strong>Окружение:</strong> полностью закрытая твоим цветом область захватывается целиком, независимо от цветов внутри.</div>
                 </div>
 
-                <div class="meta" aria-label="Статистика">
+                <div class="meta" aria-label="Статистика матча">
                     <div class="meta-item">
-                        <strong id="winsValue">0</strong>
-                        <span>Побед</span>
+                        <strong id="historyValue">0</strong>
+                        <span>Откатов</span>
                     </div>
                     <div class="meta-item">
-                        <strong id="bestValue">0%</strong>
-                        <span>Лучший результат</span>
+                        <strong id="targetValue">85</strong>
+                        <span>Плиток для 50%</span>
                     </div>
                     <div class="meta-item">
-                        <strong id="gamesValue">0</strong>
-                        <span>Игр</span>
+                        <strong id="freeValue">0</strong>
+                        <span>Свободно</span>
                     </div>
                 </div>
             </aside>
@@ -584,48 +559,70 @@
 
     <script>
         const BOARD_SIZE = 13;
-        const MAX_ROUNDS = 32;
-        const STORAGE_KEY = "colorwars-pwa-state-v1";
-        const STATS_KEY = "colorwars-pwa-stats-v1";
+        const START_CLUSTER_SIZE = 2;
+        const WIN_THRESHOLD = Math.floor((BOARD_SIZE * BOARD_SIZE) / 2) + 1;
+        const STORAGE_KEY = "colorwars-duel-state-v2";
         const COLORS = [
-            "#ff595e",
-            "#ffca3a",
-            "#8ac926",
-            "#1982c4",
-            "#6a4c93",
-            "#f15bb5"
+            { name: "Красный", value: "#e53935" },
+            { name: "Синий", value: "#1e63ff" },
+            { name: "Зелёный", value: "#2fb344" },
+            { name: "Жёлтый", value: "#ffd43b" },
+            { name: "Оранжевый", value: "#f08c00" },
+            { name: "Серый", value: "#868e96" },
+            { name: "Голубой", value: "#22b8cf" }
         ];
         const PLAYERS = [
-            { id: 0, name: "Ты", label: "Игрок", color: "#ffffff", start: [0, 0] },
-            { id: 1, name: "Cyan AI", label: "Северо-восток", color: "#66e3ff", start: [BOARD_SIZE - 1, 0] },
-            { id: 2, name: "Rose AI", label: "Юго-запад", color: "#ff7aa8", start: [0, BOARD_SIZE - 1] },
-            { id: 3, name: "Lime AI", label: "Юго-восток", color: "#95ff70", start: [BOARD_SIZE - 1, BOARD_SIZE - 1] }
+            {
+                id: 0,
+                name: "Человек",
+                label: "левый нижний угол",
+                marker: "#ffffff",
+                corner: "bottom-left"
+            },
+            {
+                id: 1,
+                name: "Компьютер",
+                label: "правый верхний угол",
+                marker: "#111827",
+                corner: "top-right"
+            }
         ];
 
         const boardEl = document.getElementById("board");
         const paletteEl = document.getElementById("palette");
         const scoreListEl = document.getElementById("scoreList");
-        const roundInfoEl = document.getElementById("roundInfo");
+        const turnInfoEl = document.getElementById("turnInfo");
         const statusTitleEl = document.getElementById("statusTitle");
         const statusTextEl = document.getElementById("statusText");
-        const newGameButton = document.getElementById("newGameButton");
         const undoButton = document.getElementById("undoButton");
-        const winsValueEl = document.getElementById("winsValue");
-        const bestValueEl = document.getElementById("bestValue");
-        const gamesValueEl = document.getElementById("gamesValue");
+        const restartButton = document.getElementById("restartButton");
+        const newGameButton = document.getElementById("newGameButton");
+        const historyValueEl = document.getElementById("historyValue");
+        const targetValueEl = document.getElementById("targetValue");
+        const freeValueEl = document.getElementById("freeValue");
         const toastEl = document.getElementById("toast");
         const installHintEl = document.getElementById("installHint");
 
         let cells = [];
-        let currentRound = 1;
+        let initialSnapshot = null;
+        let history = [];
+        let currentPlayer = 0;
+        let moveNumber = 1;
         let gameOver = false;
-        let isResolvingAi = false;
-        let previousSnapshot = null;
+        let winnerId = null;
+        let aiThinking = false;
         let toastTimer = 0;
-        let stats = loadStats();
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
+        }
+
+        function randomDistinctColor(exceptColor) {
+            let color = randomColorIndex();
+            while (color === exceptColor) {
+                color = randomColorIndex();
+            }
+            return color;
         }
 
         function indexOf(x, y) {
@@ -648,6 +645,57 @@
             ].filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < BOARD_SIZE && ny < BOARD_SIZE);
         }
 
+        function cloneCells(source = cells) {
+            return source.map((cell) => ({ ...cell }));
+        }
+
+        function cloneSnapshot(snapshot) {
+            return {
+                cells: snapshot.cells.map((cell) => ({ ...cell })),
+                currentPlayer: snapshot.currentPlayer,
+                moveNumber: snapshot.moveNumber,
+                gameOver: snapshot.gameOver,
+                winnerId: snapshot.winnerId
+            };
+        }
+
+        function makeSnapshot() {
+            return {
+                cells: cloneCells(),
+                currentPlayer,
+                moveNumber,
+                gameOver,
+                winnerId
+            };
+        }
+
+        function restoreSnapshot(snapshot) {
+            const restored = cloneSnapshot(snapshot);
+            cells = restored.cells;
+            currentPlayer = restored.currentPlayer;
+            moveNumber = restored.moveNumber;
+            gameOver = restored.gameOver;
+            winnerId = restored.winnerId;
+            aiThinking = false;
+            saveGame();
+            render();
+        }
+
+        function startingPositions(corner) {
+            const positions = [];
+            const fromLeft = corner.includes("left");
+            const fromTop = corner.includes("top");
+            const startX = fromLeft ? 0 : BOARD_SIZE - START_CLUSTER_SIZE;
+            const startY = fromTop ? 0 : BOARD_SIZE - START_CLUSTER_SIZE;
+
+            for (let y = 0; y < START_CLUSTER_SIZE; y++) {
+                for (let x = 0; x < START_CLUSTER_SIZE; x++) {
+                    positions.push([startX + x, startY + y]);
+                }
+            }
+            return positions;
+        }
+
         function createBoard() {
             const nextCells = [];
             for (let y = 0; y < BOARD_SIZE; y++) {
@@ -661,56 +709,61 @@
                 }
             }
 
+            const humanColor = randomColorIndex();
+            const computerColor = randomDistinctColor(humanColor);
+            const startingColors = [humanColor, computerColor];
+
             PLAYERS.forEach((player) => {
-                const [sx, sy] = player.start;
-                const anchorColor = player.id % COLORS.length;
-                const xDirection = sx === 0 ? 1 : -1;
-                const yDirection = sy === 0 ? 1 : -1;
-                [
-                    [sx, sy],
-                    [sx + xDirection, sy],
-                    [sx, sy + yDirection],
-                    [sx + xDirection, sy + yDirection]
-                ].forEach(([x, y]) => {
+                startingPositions(player.corner).forEach(([x, y]) => {
                     const cell = getCell(x, y, nextCells);
-                    if (cell) {
-                        cell.owner = player.id;
-                        cell.color = anchorColor;
-                    }
+                    cell.owner = player.id;
+                    cell.color = startingColors[player.id];
                 });
             });
 
             return nextCells;
         }
 
-        function snapshot() {
-            return {
-                cells: cells.map((cell) => ({ ...cell })),
-                currentRound,
-                gameOver
-            };
-        }
-
-        function restoreSnapshot(saved) {
-            if (!saved) {
-                return;
-            }
-            cells = saved.cells.map((cell) => ({ ...cell }));
-            currentRound = saved.currentRound;
-            gameOver = saved.gameOver;
-            previousSnapshot = null;
-            isResolvingAi = false;
-            saveGame();
-            render();
-            showToast("Ход отменён. Попробуй другой цвет.");
-        }
-
         function serializeGame() {
-            return JSON.stringify({ cells, currentRound, gameOver });
+            return JSON.stringify({
+                cells,
+                initialSnapshot,
+                history,
+                currentPlayer,
+                moveNumber,
+                gameOver,
+                winnerId
+            });
         }
 
         function saveGame() {
             localStorage.setItem(STORAGE_KEY, serializeGame());
+        }
+
+        function isValidSavedCells(savedCells) {
+            return Array.isArray(savedCells)
+                && savedCells.length === BOARD_SIZE * BOARD_SIZE
+                && savedCells.every((cell) => Number.isInteger(cell.x)
+                    && Number.isInteger(cell.y)
+                    && Number.isInteger(cell.color)
+                    && Number.isInteger(cell.owner)
+                    && cell.color >= 0
+                    && cell.color < COLORS.length
+                    && cell.owner >= -1
+                    && cell.owner <= 1);
+        }
+
+        function normalizeSnapshot(snapshot) {
+            if (!snapshot || !isValidSavedCells(snapshot.cells)) {
+                return null;
+            }
+            return {
+                cells: snapshot.cells.map((cell) => ({ ...cell })),
+                currentPlayer: snapshot.currentPlayer === 1 ? 1 : 0,
+                moveNumber: Math.max(1, Number(snapshot.moveNumber) || 1),
+                gameOver: Boolean(snapshot.gameOver),
+                winnerId: snapshot.winnerId === 0 || snapshot.winnerId === 1 ? snapshot.winnerId : null
+            };
         }
 
         function loadGame() {
@@ -720,79 +773,60 @@
                     return false;
                 }
                 const saved = JSON.parse(raw);
-                if (!Array.isArray(saved.cells) || saved.cells.length !== BOARD_SIZE * BOARD_SIZE) {
+                if (!isValidSavedCells(saved.cells)) {
                     return false;
                 }
-                cells = saved.cells.map((cell) => ({
-                    x: Number(cell.x),
-                    y: Number(cell.y),
-                    color: Number(cell.color),
-                    owner: Number(cell.owner)
-                }));
-                currentRound = Number(saved.currentRound) || 1;
+
+                cells = saved.cells.map((cell) => ({ ...cell }));
+                initialSnapshot = normalizeSnapshot(saved.initialSnapshot);
+                history = Array.isArray(saved.history)
+                    ? saved.history.map(normalizeSnapshot).filter(Boolean)
+                    : [];
+                currentPlayer = saved.currentPlayer === 1 ? 1 : 0;
+                moveNumber = Math.max(1, Number(saved.moveNumber) || 1);
                 gameOver = Boolean(saved.gameOver);
-                return true;
+                winnerId = saved.winnerId === 0 || saved.winnerId === 1 ? saved.winnerId : null;
+
+                return Boolean(initialSnapshot);
             } catch (error) {
                 return false;
             }
         }
 
-        function loadStats() {
-            try {
-                const raw = localStorage.getItem(STATS_KEY);
-                if (!raw) {
-                    return { wins: 0, best: 0, games: 0 };
-                }
-                const parsed = JSON.parse(raw);
-                return {
-                    wins: Number(parsed.wins) || 0,
-                    best: Number(parsed.best) || 0,
-                    games: Number(parsed.games) || 0
-                };
-            } catch (error) {
-                return { wins: 0, best: 0, games: 0 };
-            }
-        }
-
-        function saveStats() {
-            localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-        }
-
         function territoryCounts(source = cells) {
-            const counts = PLAYERS.map(() => 0);
+            const counts = [0, 0];
             source.forEach((cell) => {
-                if (cell.owner >= 0) {
+                if (cell.owner === 0 || cell.owner === 1) {
                     counts[cell.owner] += 1;
                 }
             });
             return counts;
         }
 
-        function playerColor(playerId, source = cells) {
+        function currentColorOf(playerId, source = cells) {
             const owned = source.find((cell) => cell.owner === playerId);
-            return owned ? owned.color : playerId % COLORS.length;
+            return owned ? owned.color : -1;
         }
 
-        function ownerAt(x, y) {
-            const cell = getCell(x, y);
-            return cell ? cell.owner : -1;
+        function opponentOf(playerId) {
+            return playerId === 0 ? 1 : 0;
         }
 
-        function isFrontierCell(cell) {
-            if (cell.owner === 0) {
-                return false;
-            }
-            return neighborsOf(cell.x, cell.y).some(([nx, ny]) => ownerAt(nx, ny) === 0);
+        function legalColorsFor(playerId, source = cells) {
+            const ownColor = currentColorOf(playerId, source);
+            const opponentColor = currentColorOf(opponentOf(playerId), source);
+            return COLORS
+                .map((_, index) => index)
+                .filter((index) => index !== ownColor && index !== opponentColor);
         }
 
-        function floodForPlayer(playerId, colorIndex, source = cells) {
-            const nextCells = source.map((cell) => ({ ...cell }));
+        function applyFloodCapture(playerId, colorIndex, source) {
             const queue = [];
             const visited = new Set();
-            let captured = 0;
-            let stolen = 0;
+            let capturedByColor = 0;
+            let stolenByColor = 0;
 
-            nextCells.forEach((cell) => {
+            source.forEach((cell) => {
                 if (cell.owner === playerId) {
                     cell.color = colorIndex;
                     queue.push([cell.x, cell.y]);
@@ -807,16 +841,18 @@
                     if (visited.has(key)) {
                         return;
                     }
-                    const neighbor = getCell(nx, ny, nextCells);
+
+                    const neighbor = getCell(nx, ny, source);
                     if (!neighbor || neighbor.color !== colorIndex) {
                         return;
                     }
+
                     visited.add(key);
                     if (neighbor.owner !== playerId) {
-                        if (neighbor.owner >= 0) {
-                            stolen += 1;
+                        if (neighbor.owner === opponentOf(playerId)) {
+                            stolenByColor += 1;
                         }
-                        captured += 1;
+                        capturedByColor += 1;
                         neighbor.owner = playerId;
                         neighbor.color = colorIndex;
                     }
@@ -824,23 +860,123 @@
                 });
             }
 
-            return { nextCells, captured, stolen };
+            return { capturedByColor, stolenByColor };
         }
 
-        function legalColorsFor(playerId, source = cells) {
-            const ownColor = playerColor(playerId, source);
-            return COLORS.map((_, index) => index).filter((index) => index !== ownColor);
+        function applySurroundCapture(playerId, colorIndex, source) {
+            const visited = new Set();
+            let capturedBySurround = 0;
+            let stolenBySurround = 0;
+
+            source.forEach((cell) => {
+                const startKey = indexOf(cell.x, cell.y);
+                if (cell.owner === playerId || visited.has(startKey)) {
+                    return;
+                }
+
+                const component = [];
+                const queue = [[cell.x, cell.y]];
+                let touchesEdge = false;
+                let borderedOnlyByPlayer = true;
+                visited.add(startKey);
+
+                while (queue.length) {
+                    const [x, y] = queue.shift();
+                    const current = getCell(x, y, source);
+                    component.push(current);
+
+                    if (x === 0 || y === 0 || x === BOARD_SIZE - 1 || y === BOARD_SIZE - 1) {
+                        touchesEdge = true;
+                    }
+
+                    neighborsOf(x, y).forEach(([nx, ny]) => {
+                        const neighbor = getCell(nx, ny, source);
+                        const key = indexOf(nx, ny);
+
+                        if (neighbor.owner === playerId) {
+                            return;
+                        }
+
+                        if (visited.has(key)) {
+                            return;
+                        }
+
+                        visited.add(key);
+                        queue.push([nx, ny]);
+                    });
+                }
+
+                component.forEach((componentCell) => {
+                    neighborsOf(componentCell.x, componentCell.y).forEach(([nx, ny]) => {
+                        const neighbor = getCell(nx, ny, source);
+                        if (neighbor.owner !== playerId && !component.includes(neighbor)) {
+                            borderedOnlyByPlayer = false;
+                        }
+                    });
+                });
+
+                if (!touchesEdge && borderedOnlyByPlayer) {
+                    component.forEach((capturedCell) => {
+                        if (capturedCell.owner === opponentOf(playerId)) {
+                            stolenBySurround += 1;
+                        }
+                        capturedCell.owner = playerId;
+                        capturedCell.color = colorIndex;
+                        capturedBySurround += 1;
+                    });
+                }
+            });
+
+            return { capturedBySurround, stolenBySurround };
         }
 
-        function chooseAiColor(playerId) {
-            const legal = legalColorsFor(playerId);
+        function simulateMove(playerId, colorIndex, source = cells) {
+            const nextCells = cloneCells(source);
+            const before = territoryCounts(nextCells)[playerId];
+            const flood = applyFloodCapture(playerId, colorIndex, nextCells);
+            const surround = applySurroundCapture(playerId, colorIndex, nextCells);
+            const after = territoryCounts(nextCells)[playerId];
+
+            return {
+                nextCells,
+                gained: after - before,
+                capturedByColor: flood.capturedByColor,
+                capturedBySurround: surround.capturedBySurround,
+                stolen: flood.stolenByColor + surround.stolenBySurround
+            };
+        }
+
+        function applyMove(playerId, colorIndex) {
+            const result = simulateMove(playerId, colorIndex);
+            cells = result.nextCells;
+            return result;
+        }
+
+        function chooseComputerColor() {
+            const legal = legalColorsFor(1);
             let bestColor = legal[0];
             let bestScore = -Infinity;
 
             legal.forEach((colorIndex) => {
-                const result = floodForPlayer(playerId, colorIndex);
+                const result = simulateMove(1, colorIndex);
                 const counts = territoryCounts(result.nextCells);
-                const score = result.captured + result.stolen * 1.7 + counts[playerId] * 0.04 + Math.random() * 0.25;
+                const winsNow = counts[1] >= WIN_THRESHOLD ? 10000 : 0;
+                const deniesHuman = COLORS
+                    .map((_, candidate) => candidate)
+                    .filter((candidate) => legalColorsFor(0, result.nextCells).includes(candidate))
+                    .reduce((best, candidate) => {
+                        const humanResult = simulateMove(0, candidate, result.nextCells);
+                        return Math.max(best, territoryCounts(humanResult.nextCells)[0] - counts[0]);
+                    }, 0);
+
+                const score = winsNow
+                    + result.gained * 12
+                    + result.capturedBySurround * 18
+                    + result.stolen * 10
+                    + counts[1] * 0.3
+                    - deniesHuman * 2
+                    + Math.random() * 0.25;
+
                 if (score > bestScore) {
                     bestScore = score;
                     bestColor = colorIndex;
@@ -850,203 +986,241 @@
             return bestColor;
         }
 
-        function applyMove(playerId, colorIndex) {
-            const result = floodForPlayer(playerId, colorIndex);
-            cells = result.nextCells;
-            return result;
-        }
-
-        function handleHumanMove(colorIndex) {
-            if (gameOver || isResolvingAi || !legalColorsFor(0).includes(colorIndex)) {
-                return;
-            }
-
-            previousSnapshot = snapshot();
-            const result = applyMove(0, colorIndex);
-            render();
-
-            if (checkGameOver()) {
-                return;
-            }
-
-            const message = result.captured
-                ? `Ты захватил ${result.captured} ${pluralize(result.captured, ["клетку", "клетки", "клеток"])}.`
-                : "Цвет изменён, но новых клеток рядом не оказалось.";
-            showToast(message);
-            runAiTurns();
-        }
-
-        async function runAiTurns() {
-            isResolvingAi = true;
-            statusTitleEl.textContent = "Ход соперников";
-            statusTextEl.textContent = "Боты оценивают соседние цвета...";
-            updatePaletteState();
-
-            for (const player of PLAYERS.slice(1)) {
-                if (gameOver) {
-                    break;
-                }
-                await wait(260);
-                const colorIndex = chooseAiColor(player.id);
-                applyMove(player.id, colorIndex);
-                render();
-                checkGameOver(false);
-            }
-
-            if (!gameOver) {
-                currentRound += 1;
-                checkGameOver();
-            }
-
-            isResolvingAi = false;
-            render();
-            saveGame();
-        }
-
-        function checkGameOver(shouldRender = true) {
+        function finishIfNeeded() {
             const counts = territoryCounts();
-            const claimed = counts.reduce((sum, count) => sum + count, 0);
-            const finished = claimed === cells.length || currentRound > MAX_ROUNDS;
-            if (!finished) {
-                saveGame();
+            const leader = counts[0] > counts[1] ? 0 : 1;
+            if (counts[leader] < WIN_THRESHOLD) {
                 return false;
             }
 
             gameOver = true;
-            const winnerId = counts
-                .map((count, id) => ({ id, count }))
-                .sort((a, b) => b.count - a.count)[0].id;
-            const playerPercent = Math.round((counts[0] / cells.length) * 100);
-
-            stats.games += 1;
-            stats.best = Math.max(stats.best, playerPercent);
-            if (winnerId === 0) {
-                stats.wins += 1;
-            }
-            saveStats();
+            winnerId = leader;
+            currentPlayer = leader;
             saveGame();
+            render();
 
-            const title = winnerId === 0 ? "Победа!" : `Победил ${PLAYERS[winnerId].name}`;
-            const text = `Твой результат: ${playerPercent}% территории. Нажми "Новая карта", чтобы начать заново.`;
-            statusTitleEl.textContent = title;
-            statusTextEl.textContent = text;
-            showToast(`${title} ${text}`);
-
-            if (shouldRender) {
-                render();
-            }
+            const percent = Math.round((counts[leader] / cells.length) * 100);
+            const title = winnerId === 0 ? "Победа!" : "Компьютер победил";
+            showToast(`${title} ${PLAYERS[winnerId].name} контролирует ${percent}% поля.`);
             return true;
+        }
+
+        function describeMove(playerId, result) {
+            const actor = playerId === 0 ? "Ты" : "Компьютер";
+            const parts = [];
+            if (result.capturedByColor > 0) {
+                parts.push(`${result.capturedByColor} через соседство`);
+            }
+            if (result.capturedBySurround > 0) {
+                parts.push(`${result.capturedBySurround} окружением`);
+            }
+            if (!parts.length) {
+                return `${actor} сменил цвет без новых плиток.`;
+            }
+            return `${actor} захватил: ${parts.join(", ")}.`;
+        }
+
+        function handleHumanMove(colorIndex) {
+            if (gameOver || aiThinking || currentPlayer !== 0) {
+                return;
+            }
+
+            if (!legalColorsFor(0).includes(colorIndex)) {
+                showToast("Этот цвет выбрать нельзя: он уже твой или принадлежит компьютеру.");
+                return;
+            }
+
+            history.push(makeSnapshot());
+            const humanResult = applyMove(0, colorIndex);
+            currentPlayer = 1;
+            moveNumber += 1;
+            saveGame();
+            render();
+            showToast(describeMove(0, humanResult));
+
+            if (!finishIfNeeded()) {
+                runComputerTurn();
+            }
+        }
+
+        async function runComputerTurn() {
+            aiThinking = true;
+            render();
+            await wait(420);
+
+            const colorIndex = chooseComputerColor();
+            const computerResult = applyMove(1, colorIndex);
+            currentPlayer = 0;
+            moveNumber += 1;
+            aiThinking = false;
+            saveGame();
+            render();
+            showToast(`${describeMove(1, computerResult)} Теперь твой ход.`);
+            finishIfNeeded();
+        }
+
+        function undoMove() {
+            if (aiThinking || !history.length) {
+                return;
+            }
+
+            const snapshot = history.pop();
+            restoreSnapshot(snapshot);
+            showToast(history.length ? "Откат выполнен. Можно откатиться ещё." : "Откат к началу партии.");
+        }
+
+        function restartSameField() {
+            if (!initialSnapshot) {
+                return;
+            }
+            history = [];
+            restoreSnapshot(initialSnapshot);
+            showToast("Партия возвращена к старту на том же поле.");
+        }
+
+        function startNewGame() {
+            cells = createBoard();
+            currentPlayer = 0;
+            moveNumber = 1;
+            gameOver = false;
+            winnerId = null;
+            aiThinking = false;
+            history = [];
+            initialSnapshot = makeSnapshot();
+            saveGame();
+            render();
+            showToast("Новое поле готово. Первый ход за человеком.");
         }
 
         function wait(ms) {
             return new Promise((resolve) => window.setTimeout(resolve, ms));
         }
 
-        function pluralize(value, variants) {
-            const mod10 = value % 10;
-            const mod100 = value % 100;
-            if (mod10 === 1 && mod100 !== 11) {
-                return variants[0];
+        function isFrontierCell(cell) {
+            if (cell.owner !== 0) {
+                return false;
             }
-            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-                return variants[1];
-            }
-            return variants[2];
+            return neighborsOf(cell.x, cell.y).some(([nx, ny]) => {
+                const neighbor = getCell(nx, ny);
+                return neighbor && neighbor.owner !== 0;
+            });
         }
 
         function renderBoard() {
+            boardEl.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, 1fr)`;
             const fragment = document.createDocumentFragment();
+
             cells.forEach((cell) => {
                 const tile = document.createElement("div");
                 tile.className = "cell";
                 tile.setAttribute("role", "gridcell");
                 tile.dataset.owner = String(cell.owner);
                 tile.dataset.frontier = String(isFrontierCell(cell));
-                tile.style.setProperty("--cell-color", COLORS[cell.color]);
-                tile.title = cell.owner >= 0
-                    ? `${PLAYERS[cell.owner].name}: ${COLORS[cell.color]}`
-                    : `Свободная клетка: ${COLORS[cell.color]}`;
+                tile.style.setProperty("--cell-color", COLORS[cell.color].value);
+
+                const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
+                tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
                 fragment.appendChild(tile);
             });
+
             boardEl.replaceChildren(fragment);
         }
 
         function renderScores() {
             const counts = territoryCounts();
             const fragment = document.createDocumentFragment();
+
             PLAYERS.forEach((player) => {
                 const count = counts[player.id];
                 const percent = Math.round((count / cells.length) * 100);
+                const currentColor = currentColorOf(player.id);
+                const colorValue = currentColor >= 0 ? COLORS[currentColor].value : "#2b3045";
+                const colorName = currentColor >= 0 ? COLORS[currentColor].name : "нет плиток";
                 const row = document.createElement("div");
                 row.className = "score-row";
-                row.style.setProperty("--player-color", player.color);
+                row.style.setProperty("--marker-color", player.marker);
+                row.style.setProperty("--current-color", colorValue);
                 row.style.setProperty("--score-width", `${percent}%`);
                 row.innerHTML = `
                     <span class="player-dot" aria-hidden="true"></span>
                     <span class="score-name">
                         <strong>${player.name}</strong>
-                        <span>${player.label}</span>
+                        <span>${player.label}; цвет: ${colorName}</span>
                     </span>
-                    <span class="score-value">${percent}%</span>
+                    <span class="score-value">${count} (${percent}%)</span>
                     <span class="progress" aria-hidden="true"><span></span></span>
                 `;
                 fragment.appendChild(row);
             });
+
             scoreListEl.replaceChildren(fragment);
         }
 
         function renderPalette() {
             const legal = new Set(legalColorsFor(0));
+            const ownColor = currentColorOf(0);
+            const computerColor = currentColorOf(1);
             const fragment = document.createDocumentFragment();
+
             COLORS.forEach((color, index) => {
                 const button = document.createElement("button");
+                const disabled = gameOver || aiThinking || currentPlayer !== 0 || !legal.has(index);
+                let reason = "можно выбрать";
+
+                if (index === ownColor) {
+                    reason = "это твой текущий цвет";
+                } else if (index === computerColor) {
+                    reason = "это текущий цвет компьютера";
+                } else if (disabled) {
+                    reason = "ход временно недоступен";
+                }
+
                 button.className = "color-btn";
                 button.type = "button";
-                button.style.setProperty("--choice-color", color);
-                button.disabled = gameOver || isResolvingAi || !legal.has(index);
-                button.setAttribute("aria-label", `Выбрать цвет ${index + 1}`);
+                button.style.setProperty("--choice-color", color.value);
+                button.disabled = disabled;
+                button.title = `${color.name}: ${reason}`;
+                button.setAttribute("aria-label", `Выбрать ${color.name}: ${reason}`);
                 button.addEventListener("click", () => handleHumanMove(index));
                 fragment.appendChild(button);
             });
+
             paletteEl.replaceChildren(fragment);
         }
 
-        function updatePaletteState() {
-            Array.from(paletteEl.children).forEach((button, index) => {
-                button.disabled = gameOver || isResolvingAi || !legalColorsFor(0).includes(index);
-            });
-        }
-
-        function renderStats() {
-            winsValueEl.textContent = String(stats.wins);
-            bestValueEl.textContent = `${stats.best}%`;
-            gamesValueEl.textContent = String(stats.games);
-        }
-
         function renderStatus() {
-            roundInfoEl.textContent = `Раунд ${Math.min(currentRound, MAX_ROUNDS)} / ${MAX_ROUNDS}`;
-            undoButton.disabled = !previousSnapshot || isResolvingAi || gameOver;
+            const counts = territoryCounts();
+            const free = cells.length - counts[0] - counts[1];
+            const humanPercent = Math.round((counts[0] / cells.length) * 100);
+            const computerPercent = Math.round((counts[1] / cells.length) * 100);
+
+            turnInfoEl.textContent = `Ход ${moveNumber}`;
+            historyValueEl.textContent = String(history.length);
+            targetValueEl.textContent = String(WIN_THRESHOLD);
+            freeValueEl.textContent = String(free);
+            undoButton.disabled = aiThinking || !history.length;
+            restartButton.disabled = aiThinking || !initialSnapshot;
 
             if (gameOver) {
-                return;
-            }
-            if (isResolvingAi) {
-                statusTitleEl.textContent = "Ход соперников";
-                statusTextEl.textContent = "Боты выбирают цвета для атаки по границам.";
+                statusTitleEl.textContent = winnerId === 0 ? "Победа!" : "Победил компьютер";
+                statusTextEl.textContent = `${PLAYERS[winnerId].name} захватил больше половины поля. Можно откатить ход или переиграть это поле.`;
                 return;
             }
 
-            const counts = territoryCounts();
-            const percent = Math.round((counts[0] / cells.length) * 100);
+            if (aiThinking || currentPlayer === 1) {
+                statusTitleEl.textContent = "Ход компьютера";
+                statusTextEl.textContent = "Компьютер выбирает цвет по ожидаемому захвату и риску твоего ответа.";
+                return;
+            }
+
             statusTitleEl.textContent = "Твой ход";
-            statusTextEl.textContent = `Сейчас у тебя ${percent}% поля. Выбери цвет, который касается твоей границы.`;
+            statusTextEl.textContent = `У тебя ${humanPercent}%, у компьютера ${computerPercent}%. Нужно ${WIN_THRESHOLD} плиток для победы.`;
         }
 
         function render() {
             renderBoard();
             renderScores();
             renderPalette();
-            renderStats();
             renderStatus();
         }
 
@@ -1056,18 +1230,7 @@
             toastEl.classList.add("visible");
             toastTimer = window.setTimeout(() => {
                 toastEl.classList.remove("visible");
-            }, 2600);
-        }
-
-        function startNewGame() {
-            cells = createBoard();
-            currentRound = 1;
-            gameOver = false;
-            isResolvingAi = false;
-            previousSnapshot = null;
-            saveGame();
-            render();
-            showToast("Новая карта готова. Начинай с выбора цвета.");
+            }, 3000);
         }
 
         function registerServiceWorker() {
@@ -1077,7 +1240,7 @@
             }
 
             window.addEventListener("load", () => {
-                navigator.serviceWorker.register("/sw.js")
+                navigator.serviceWorker.register("sw.js")
                     .then(() => {
                         installHintEl.textContent = "PWA готова: можно установить и играть офлайн";
                     })
@@ -1089,14 +1252,19 @@
 
         function init() {
             if (!loadGame()) {
-                cells = createBoard();
-                saveGame();
+                startNewGame();
+            } else {
+                aiThinking = false;
+                render();
+                if (!gameOver && currentPlayer === 1) {
+                    runComputerTurn();
+                }
             }
-            render();
-            registerServiceWorker();
 
+            undoButton.addEventListener("click", undoMove);
+            restartButton.addEventListener("click", restartSameField);
             newGameButton.addEventListener("click", startNewGame);
-            undoButton.addEventListener("click", () => restoreSnapshot(previousSnapshot));
+            registerServiceWorker();
         }
 
         init();

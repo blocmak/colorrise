@@ -1,16 +1,16 @@
 {
-    "name": "ColorWars PWA Prototype",
+    "name": "ColorWars Duel PWA",
     "short_name": "ColorWars",
-    "description": "Лёгкий PWA-прототип ColorWars: захват территории выбором цветов.",
-    "start_url": "/",
-    "scope": "/",
+    "description": "PWA-дуэль ColorWars: человек против компьютера за цветные плитки.",
+    "start_url": "./",
+    "scope": "./",
     "display": "standalone",
     "orientation": "portrait-primary",
     "background_color": "#0d1020",
     "theme_color": "#101528",
     "icons": [
         {
-            "src": "/icon.svg",
+            "src": "icon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any maskable"
