@@ -478,6 +478,7 @@
 
         .endgame-effect.visible {
             opacity: 1;
+            pointer-events: auto;
             visibility: visible;
         }
 
@@ -515,10 +516,22 @@
             line-height: 1.45;
         }
 
+        .endgame-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .endgame-actions .action-btn {
+            width: 100%;
+        }
+
         .effect-layer {
             position: absolute;
             inset: 0;
             overflow: hidden;
+            pointer-events: none;
         }
 
         .firework {
@@ -661,6 +674,10 @@
             .cell::after {
                 content: "" !important;
             }
+
+            .endgame-actions {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -743,6 +760,10 @@
         <div class="endgame-card">
             <h2 id="endgameTitle"></h2>
             <p id="endgameText"></p>
+            <div class="endgame-actions">
+                <button class="action-btn primary" id="endgameNewGameButton" type="button">Новая игра</button>
+                <button class="action-btn" id="endgameReplayButton" type="button">Переиграть</button>
+            </div>
         </div>
     </div>
 
@@ -795,6 +816,8 @@
         const effectLayerEl = document.getElementById("effectLayer");
         const endgameTitleEl = document.getElementById("endgameTitle");
         const endgameTextEl = document.getElementById("endgameText");
+        const endgameNewGameButton = document.getElementById("endgameNewGameButton");
+        const endgameReplayButton = document.getElementById("endgameReplayButton");
         const installHintEl = document.getElementById("installHint");
 
         let cells = [];
@@ -1617,6 +1640,8 @@
             undoButton.addEventListener("click", undoMove);
             restartButton.addEventListener("click", restartSameField);
             newGameButton.addEventListener("click", startNewGame);
+            endgameNewGameButton.addEventListener("click", startNewGame);
+            endgameReplayButton.addEventListener("click", restartSameField);
             registerServiceWorker();
         }
 
