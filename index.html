@@ -461,6 +461,154 @@
             opacity: 1;
         }
 
+        .endgame-effect {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            overflow: hidden;
+            background: rgba(5, 8, 20, 0.36);
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transition: opacity 180ms ease, visibility 180ms ease;
+            z-index: 30;
+        }
+
+        .endgame-effect.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .endgame-card {
+            position: relative;
+            z-index: 2;
+            width: min(440px, 92vw);
+            padding: 28px 22px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 28px;
+            background: rgba(13, 18, 35, 0.88);
+            box-shadow: var(--shadow);
+            text-align: center;
+            backdrop-filter: blur(18px);
+        }
+
+        .endgame-effect.victory .endgame-card {
+            animation: victory-pop 900ms cubic-bezier(0.2, 1.35, 0.35, 1) both;
+        }
+
+        .endgame-effect.defeat .endgame-card {
+            animation: defeat-shake 820ms ease both;
+        }
+
+        .endgame-card h2 {
+            margin: 0 0 8px;
+            font-size: clamp(2rem, 8vw, 4rem);
+            line-height: 0.95;
+        }
+
+        .endgame-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.45;
+        }
+
+        .effect-layer {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .firework {
+            position: absolute;
+            left: var(--x);
+            top: var(--y);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--particle-color);
+            box-shadow: 0 0 16px var(--particle-color);
+            animation: firework-burst 1100ms ease-out var(--delay) both;
+        }
+
+        .defeat-drop {
+            position: absolute;
+            left: var(--x);
+            top: -12%;
+            width: 4px;
+            height: var(--drop-height);
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(134, 142, 150, 0), rgba(134, 142, 150, 0.92));
+            animation: defeat-rain var(--duration) linear var(--delay) both;
+        }
+
+        @keyframes firework-burst {
+            0% {
+                transform: translate(-50%, -50%) scale(0.2);
+                opacity: 0;
+            }
+            12% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.05);
+                opacity: 0;
+            }
+        }
+
+        @keyframes victory-pop {
+            0% {
+                transform: scale(0.76) rotate(-2deg);
+                opacity: 0;
+            }
+            55% {
+                transform: scale(1.06) rotate(1deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes defeat-shake {
+            0%,
+            100% {
+                transform: translateX(0) rotate(0);
+            }
+            15% {
+                transform: translateX(-10px) rotate(-1deg);
+            }
+            30% {
+                transform: translateX(9px) rotate(1deg);
+            }
+            45% {
+                transform: translateX(-7px) rotate(-0.8deg);
+            }
+            60% {
+                transform: translateX(5px) rotate(0.6deg);
+            }
+            75% {
+                transform: translateX(-3px) rotate(-0.3deg);
+            }
+        }
+
+        @keyframes defeat-rain {
+            0% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+            12% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(125vh);
+                opacity: 0;
+            }
+        }
+
         @media (max-width: 930px) {
             .hero,
             .layout {
@@ -590,6 +738,13 @@
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="endgame-effect" id="endgameEffect" role="status" aria-live="assertive">
+        <div class="effect-layer" id="effectLayer" aria-hidden="true"></div>
+        <div class="endgame-card">
+            <h2 id="endgameTitle"></h2>
+            <p id="endgameText"></p>
+        </div>
+    </div>
 
     <script>
         const BOARD_SIZE = 13;
@@ -636,6 +791,10 @@
         const targetValueEl = document.getElementById("targetValue");
         const freeValueEl = document.getElementById("freeValue");
         const toastEl = document.getElementById("toast");
+        const endgameEffectEl = document.getElementById("endgameEffect");
+        const effectLayerEl = document.getElementById("effectLayer");
+        const endgameTitleEl = document.getElementById("endgameTitle");
+        const endgameTextEl = document.getElementById("endgameText");
         const installHintEl = document.getElementById("installHint");
 
         let cells = [];
@@ -712,6 +871,7 @@
             gameOver = restored.gameOver;
             winnerId = restored.winnerId;
             aiThinking = false;
+            clearEndgameEffect();
             saveGame();
             render();
         }
@@ -1144,25 +1304,8 @@
             saveGame();
             render();
 
-            const percent = Math.round((counts[leader] / cells.length) * 100);
-            const title = winnerId === 0 ? "Победа!" : "Компьютер победил";
-            showToast(`${title} ${PLAYERS[winnerId].name} контролирует ${percent}% поля.`);
+            showEndgameEffect(winnerId);
             return true;
-        }
-
-        function describeMove(playerId, result) {
-            const actor = playerId === 0 ? "Ты" : "Компьютер";
-            const parts = [];
-            if (result.capturedByColor > 0) {
-                parts.push(`${result.capturedByColor} через соседство`);
-            }
-            if (result.capturedBySurround > 0) {
-                parts.push(`${result.capturedBySurround} окружением`);
-            }
-            if (!parts.length) {
-                return `${actor} сменил цвет без новых плиток.`;
-            }
-            return `${actor} захватил: ${parts.join(", ")}.`;
         }
 
         function handleHumanMove(colorIndex) {
@@ -1176,12 +1319,11 @@
             }
 
             history.push(makeSnapshot());
-            const humanResult = applyMove(0, colorIndex);
+            applyMove(0, colorIndex);
             currentPlayer = 1;
             moveNumber += 1;
             saveGame();
             render();
-            showToast(describeMove(0, humanResult));
 
             if (!finishIfNeeded()) {
                 runComputerTurn();
@@ -1194,13 +1336,12 @@
             await wait(420);
 
             const colorIndex = chooseComputerColor();
-            const computerResult = applyMove(1, colorIndex);
+            applyMove(1, colorIndex);
             currentPlayer = 0;
             moveNumber += 1;
             aiThinking = false;
             saveGame();
             render();
-            showToast(`${describeMove(1, computerResult)} Теперь твой ход.`);
             finishIfNeeded();
         }
 
@@ -1232,6 +1373,7 @@
             aiThinking = false;
             history = [];
             initialSnapshot = makeSnapshot();
+            clearEndgameEffect();
             saveGame();
             render();
             showToast("Новое поле готово. Первый ход за человеком.");
@@ -1370,6 +1512,69 @@
             renderScores();
             renderPalette();
             renderStatus();
+        }
+
+        function clearEndgameEffect() {
+            effectLayerEl.replaceChildren();
+            endgameEffectEl.className = "endgame-effect";
+            endgameTitleEl.textContent = "";
+            endgameTextEl.textContent = "";
+        }
+
+        function showEndgameEffect(playerId) {
+            clearEndgameEffect();
+
+            if (playerId === 0) {
+                endgameTitleEl.textContent = "Победа!";
+                endgameTextEl.textContent = "Ты захватил больше половины поля. Салют!";
+                createFireworks();
+                endgameEffectEl.classList.add("visible", "victory");
+                return;
+            }
+
+            endgameTitleEl.textContent = "Поражение";
+            endgameTextEl.textContent = "Компьютер первым забрал больше половины поля. Можно откатить ход и попробовать иначе.";
+            createDefeatRain();
+            endgameEffectEl.classList.add("visible", "defeat");
+        }
+
+        function createFireworks() {
+            const burstCenters = [
+                ["22%", "28%"],
+                ["50%", "18%"],
+                ["76%", "30%"],
+                ["34%", "62%"],
+                ["68%", "58%"]
+            ];
+            const particleColors = COLORS.map((color) => color.value);
+
+            burstCenters.forEach(([x, y], burstIndex) => {
+                for (let i = 0; i < 18; i++) {
+                    const angle = (Math.PI * 2 * i) / 18;
+                    const distance = 70 + Math.random() * 86;
+                    const particle = document.createElement("span");
+                    particle.className = "firework";
+                    particle.style.setProperty("--x", x);
+                    particle.style.setProperty("--y", y);
+                    particle.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+                    particle.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+                    particle.style.setProperty("--delay", `${burstIndex * 90 + Math.random() * 120}ms`);
+                    particle.style.setProperty("--particle-color", particleColors[(i + burstIndex) % particleColors.length]);
+                    effectLayerEl.appendChild(particle);
+                }
+            });
+        }
+
+        function createDefeatRain() {
+            for (let i = 0; i < 54; i++) {
+                const drop = document.createElement("span");
+                drop.className = "defeat-drop";
+                drop.style.setProperty("--x", `${Math.random() * 100}%`);
+                drop.style.setProperty("--drop-height", `${34 + Math.random() * 58}px`);
+                drop.style.setProperty("--duration", `${900 + Math.random() * 900}ms`);
+                drop.style.setProperty("--delay", `${Math.random() * 520}ms`);
+                effectLayerEl.appendChild(drop);
+            }
         }
 
         function showToast(message) {
