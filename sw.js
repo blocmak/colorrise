@@ -1,10 +1,11 @@
-const CACHE_NAME = "colorwars-pwa-v1";
+const CACHE_NAME = "colorwars-duel-pwa-v9";
 const APP_SHELL = [
-    "/",
-    "/index.html",
-    "/manifest.webmanifest",
-    "/icon.svg"
+    "./",
+    "./index.html",
+    "./manifest.webmanifest",
+    "./icon.svg"
 ];
+const INDEX_URL = new URL("./index.html", self.registration.scope).href;
 
 self.addEventListener("install", (event) => {
     event.waitUntil(
@@ -41,6 +42,6 @@ self.addEventListener("fetch", (event) => {
                         .catch(() => {});
                     return response;
                 })
-                .catch(() => caches.match("/index.html")))
+                .catch(() => caches.match(INDEX_URL)))
     );
 });
