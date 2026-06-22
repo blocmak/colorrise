@@ -1,7 +1,7 @@
 {
-    "name": "ColorWars PWA Prototype",
-    "short_name": "ColorWars",
-    "description": "Лёгкий PWA-прототип ColorWars: захват территории выбором цветов.",
+    "name": "COLORRISE PWA Prototype",
+    "short_name": "COLORRISE",
+    "description": "Лёгкий PWA-прототип COLORRISE: захват территории выбором цветов.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",

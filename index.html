@@ -4,23 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#101528">
-    <meta name="description" content="ColorWars PWA prototype: захватывай территорию выбором цветов.">
+    <meta name="description" content="COLORRISE PWA prototype: захватывай территорию выбором цветов.">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <title>ColorWars · PWA prototype</title>
+    <title>COLORRISE · PWA prototype</title>
     <style>
         :root {
             color-scheme: dark;
             --bg: #0d1020;
-            --panel: rgba(18, 24, 45, 0.86);
-            --panel-strong: #151b32;
+            --panel: rgba(18, 24, 45, 0.9);
             --text: #f8fbff;
             --muted: #9ba9c9;
             --accent: #66e3ff;
-            --danger: #ff6b8a;
-            --good: #72f1a8;
-            --radius: 24px;
+            --radius: 22px;
             --shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+            --safe-top: max(10px, env(safe-area-inset-top));
+            --safe-bottom: max(10px, env(safe-area-inset-bottom));
         }
 
         * {
@@ -36,6 +35,7 @@
 
         body {
             margin: 0;
+            overflow: hidden;
             background:
                 radial-gradient(circle at top left, rgba(102, 227, 255, 0.24), transparent 32rem),
                 radial-gradient(circle at bottom right, rgba(255, 107, 138, 0.22), transparent 30rem),
@@ -53,136 +53,71 @@
         }
 
         .app {
-            width: min(1180px, 100%);
+            display: grid;
+            grid-template-rows: 58px minmax(0, 1fr) 72px;
+            gap: clamp(8px, 1.6vh, 16px);
+            width: min(980px, 100%);
+            height: 100dvh;
             margin: 0 auto;
-            padding: max(18px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+            padding: var(--safe-top) clamp(10px, 2vw, 18px) var(--safe-bottom);
         }
 
-        .hero {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 20px;
-            align-items: end;
-            margin-bottom: 18px;
-        }
-
-        .eyebrow {
-            margin: 0 0 6px;
-            color: var(--accent);
-            font-size: 0.78rem;
-            font-weight: 800;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: clamp(2.3rem, 8vw, 5.5rem);
-            line-height: 0.9;
-            letter-spacing: -0.08em;
-            text-transform: uppercase;
-        }
-
-        .hero p {
-            max-width: 760px;
-            margin: 12px 0 0;
-            color: var(--muted);
-            font-size: clamp(1rem, 2vw, 1.18rem);
-            line-height: 1.55;
-        }
-
-        .install-hint {
-            display: inline-flex;
-            gap: 8px;
-            align-items: center;
-            padding: 10px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.07);
-            color: var(--muted);
-            white-space: nowrap;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 340px;
-            gap: 18px;
-            align-items: start;
-        }
-
-        .board-card,
-        .side-card {
+        .score-track,
+        .bottom-bar {
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: var(--radius);
-            background: var(--panel);
+            background: rgba(2, 6, 17, 0.5);
             box-shadow: var(--shadow);
+            overflow: hidden;
             backdrop-filter: blur(18px);
         }
 
-        .board-card {
-            padding: clamp(10px, 2vw, 18px);
-        }
-
-        .board-toolbar {
+        .score-track {
+            position: relative;
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
+            align-items: stretch;
+            min-width: 0;
         }
 
-        .status {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+        .score-segment {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: var(--score-width);
+            height: 100%;
+            min-width: 0;
+            background: var(--player-color);
+            box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.22);
+            transition: width 180ms ease, background 160ms ease;
         }
 
-        .status strong {
-            font-size: 1.05rem;
+        .score-segment.robot {
+            margin-left: auto;
         }
 
-        .status span {
-            color: var(--muted);
-            font-size: 0.9rem;
+        .score-segment span {
+            max-width: 100%;
+            padding: 0 6px;
+            overflow: hidden;
+            color: #07101e;
+            font-size: clamp(0.86rem, 3vw, 1.12rem);
+            font-weight: 950;
+            line-height: 1;
+            text-align: center;
+            text-shadow: 0 1px 12px rgba(255, 255, 255, 0.44);
+            white-space: nowrap;
         }
 
-        .primary-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
-        .action-btn {
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            transition: transform 120ms ease, background 120ms ease;
-        }
-
-        .action-btn:hover,
-        .action-btn:focus-visible {
-            background: rgba(255, 255, 255, 0.16);
-            outline: none;
-        }
-
-        .action-btn:active {
-            transform: translateY(1px) scale(0.98);
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, #33d6ff, #836bff);
-            color: #06101b;
-            font-weight: 800;
+        .board-stage {
+            display: grid;
+            min-height: 0;
+            place-items: center;
         }
 
         .board-wrap {
             aspect-ratio: 1;
-            width: 100%;
-            max-height: calc(100vh - 220px);
-            min-height: 300px;
-            margin: 0 auto;
+            width: min(100%, calc(100dvh - 178px), 760px);
+            max-height: 100%;
         }
 
         .board {
@@ -215,9 +150,7 @@
                 0 0 14px rgba(255, 255, 255, 0.36);
         }
 
-        .cell[data-owner="1"],
-        .cell[data-owner="2"],
-        .cell[data-owner="3"] {
+        .cell[data-owner="1"] {
             box-shadow:
                 inset 0 0 0 3px rgba(12, 17, 31, 0.86),
                 inset 0 -10px 18px rgba(0, 0, 0, 0.2);
@@ -245,113 +178,19 @@
         }
 
         .cell[data-owner="1"]::after {
-            content: "AI";
-        }
-
-        .cell[data-owner="2"]::after {
-            content: "AI";
-        }
-
-        .cell[data-owner="3"]::after {
-            content: "AI";
-        }
-
-        .side-card {
-            padding: 18px;
-        }
-
-        .panel-title {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
-        .panel-title h2 {
-            margin: 0;
-            font-size: 1.05rem;
-        }
-
-        .round-pill {
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(102, 227, 255, 0.12);
-            color: var(--accent);
-            font-size: 0.82rem;
-            font-weight: 800;
-        }
-
-        .score-list {
-            display: grid;
-            gap: 10px;
-            margin-bottom: 18px;
-        }
-
-        .score-row {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .player-dot {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.82);
-            background: var(--player-color);
-            box-shadow: 0 0 18px var(--player-color);
-        }
-
-        .score-name {
-            min-width: 0;
-        }
-
-        .score-name strong,
-        .score-name span {
-            display: block;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .score-name span {
-            color: var(--muted);
-            font-size: 0.78rem;
-        }
-
-        .score-value {
-            font-variant-numeric: tabular-nums;
-            font-weight: 900;
-        }
-
-        .progress {
-            grid-column: 2 / 4;
-            height: 8px;
-            overflow: hidden;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .progress span {
-            display: block;
-            height: 100%;
-            width: var(--score-width);
-            border-radius: inherit;
-            background: var(--player-color);
+            content: "BOT";
         }
 
         .palette {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 10px 0 18px;
+            grid-template-columns: repeat(6, minmax(34px, 1fr));
+            gap: clamp(6px, 1.4vw, 10px);
+            min-width: 0;
         }
 
         .color-btn {
-            min-height: 58px;
-            border-radius: 18px;
+            min-height: 48px;
+            border-radius: 16px;
             background: var(--choice-color);
             box-shadow:
                 inset 0 0 0 2px rgba(255, 255, 255, 0.3),
@@ -376,56 +215,10 @@
             transform: none;
         }
 
-        .rules {
-            display: grid;
-            gap: 10px;
-            margin: 0;
-            padding: 14px;
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.07);
-            color: var(--muted);
-            font-size: 0.92rem;
-            line-height: 1.45;
-        }
-
-        .rules strong {
-            color: var(--text);
-        }
-
-        .meta {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 14px;
-        }
-
-        .meta-item {
-            padding: 12px 10px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.07);
-            text-align: center;
-        }
-
-        .meta-item strong,
-        .meta-item span {
-            display: block;
-        }
-
-        .meta-item strong {
-            font-size: 1.2rem;
-        }
-
-        .meta-item span {
-            color: var(--muted);
-            font-size: 0.74rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
         .toast {
             position: fixed;
             right: 16px;
-            bottom: 16px;
+            bottom: calc(88px + env(safe-area-inset-bottom));
             max-width: min(420px, calc(100vw - 32px));
             padding: 14px 16px;
             border: 1px solid rgba(255, 255, 255, 0.14);
@@ -445,67 +238,118 @@
             opacity: 1;
         }
 
-        @media (max-width: 900px) {
-            .hero,
-            .layout {
-                grid-template-columns: 1fr;
-            }
+        .bottom-bar {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 56px;
+            gap: 10px;
+            align-items: center;
+            padding: 8px;
+        }
 
-            .hero {
-                align-items: start;
-            }
+        .menu-shell {
+            position: relative;
+            height: 100%;
+        }
 
-            .install-hint {
-                justify-self: start;
-            }
+        .menu-button {
+            display: grid;
+            width: 100%;
+            height: 100%;
+            place-items: center;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.12);
+            transition: background 120ms ease, transform 120ms ease;
+        }
 
-            .side-card {
-                order: -1;
-            }
+        .menu-button:hover,
+        .menu-button:focus-visible {
+            background: rgba(255, 255, 255, 0.18);
+            outline: none;
+        }
 
-            .board-wrap {
-                max-height: none;
-            }
+        .menu-button:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .menu-icon,
+        .menu-icon::before,
+        .menu-icon::after {
+            display: block;
+            width: 24px;
+            height: 3px;
+            border-radius: 999px;
+            background: #fff;
+            content: "";
+        }
+
+        .menu-icon {
+            position: relative;
+        }
+
+        .menu-icon::before,
+        .menu-icon::after {
+            position: absolute;
+            left: 0;
+        }
+
+        .menu-icon::before {
+            top: -8px;
+        }
+
+        .menu-icon::after {
+            top: 8px;
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 12px);
+            display: grid;
+            width: min(220px, calc(100vw - 28px));
+            gap: 6px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 20px;
+            background: rgba(15, 20, 37, 0.96);
+            box-shadow: var(--shadow);
+            z-index: 30;
+        }
+
+        .menu-dropdown[hidden] {
+            display: none;
+        }
+
+        .menu-title {
+            padding: 6px 8px 10px;
+            color: var(--accent);
+            font-size: 1rem;
+            font-weight: 950;
+            letter-spacing: 0.12em;
+        }
+
+        .menu-item {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            text-align: left;
+            text-transform: lowercase;
+        }
+
+        .menu-item:hover,
+        .menu-item:focus-visible {
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
         }
 
         @media (max-width: 520px) {
             .app {
-                padding-inline: 10px;
-            }
-
-            .hero p {
-                font-size: 0.96rem;
-            }
-
-            .board-card,
-            .side-card {
-                border-radius: 20px;
-            }
-
-            .board-toolbar {
-                align-items: stretch;
-            }
-
-            .primary-actions {
-                justify-content: stretch;
-            }
-
-            .action-btn {
-                flex: 1;
-            }
-
-            .palette {
-                grid-template-columns: repeat(6, 1fr);
-                gap: 7px;
+                grid-template-rows: 52px minmax(0, 1fr) 64px;
             }
 
             .color-btn {
                 min-height: 44px;
-                border-radius: 14px;
-            }
-
-            .meta {
-                grid-template-columns: 1fr;
+                border-radius: 13px;
             }
 
             .cell::after {
@@ -516,68 +360,29 @@
 </head>
 <body>
     <main class="app">
-        <section class="hero" aria-labelledby="game-title">
-            <div>
-                <p class="eyebrow">PWA game prototype</p>
-                <h1 id="game-title">ColorWars</h1>
-                <p>
-                    Захватывай соседние клетки выбором цвета. Побеждает игрок с максимальной территорией,
-                    когда поле заполнено или закончились раунды.
-                </p>
-            </div>
-            <div class="install-hint" id="installHint">Работает офлайн после первого запуска</div>
+        <section class="score-track" id="scoreList" aria-label="Скоринг матча">
         </section>
 
-        <section class="layout" aria-label="Игровая область">
-            <div class="board-card">
-                <div class="board-toolbar">
-                    <div class="status" aria-live="polite">
-                        <strong id="statusTitle">Твой ход</strong>
-                        <span id="statusText">Выбери цвет, чтобы расширить свою территорию.</span>
-                    </div>
-                    <div class="primary-actions">
-                        <button class="action-btn" id="undoButton" type="button">Отменить ход</button>
-                        <button class="action-btn primary" id="newGameButton" type="button">Новая карта</button>
-                    </div>
-                </div>
-                <div class="board-wrap">
-                    <div class="board" id="board" role="grid" aria-label="Поле ColorWars"></div>
+        <section class="board-stage" aria-label="Игровая область">
+            <div class="board-wrap">
+                <div class="board" id="board" role="grid" aria-label="Поле COLORRISE"></div>
+            </div>
+        </section>
+
+        <footer class="bottom-bar" aria-label="Панель выбора цвета">
+            <div class="palette" id="palette" aria-label="Доступные цвета"></div>
+            <div class="menu-shell">
+                <button class="menu-button" id="menuButton" type="button" aria-label="Открыть меню" aria-expanded="false">
+                    <span class="menu-icon" aria-hidden="true"></span>
+                </button>
+                <div class="menu-dropdown" id="menuDropdown" hidden>
+                    <strong class="menu-title">COLORRISE</strong>
+                    <button class="menu-item" id="restartButton" type="button">сначала</button>
+                    <button class="menu-item" id="newGameButton" type="button">новая</button>
+                    <button class="menu-item" id="menuItemButton" type="button">меню</button>
                 </div>
             </div>
-
-            <aside class="side-card" aria-label="Панель игры">
-                <div class="panel-title">
-                    <h2>Матч</h2>
-                    <span class="round-pill" id="roundInfo">Раунд 1 / 32</span>
-                </div>
-
-                <div class="score-list" id="scoreList"></div>
-
-                <h2>Выбор цвета</h2>
-                <div class="palette" id="palette" aria-label="Доступные цвета"></div>
-
-                <div class="rules">
-                    <div><strong>Как играть:</strong> твоя область подсвечена белой рамкой.</div>
-                    <div>Нажми цвет: твоя территория перекрасится и поглотит соприкасающиеся клетки этого цвета.</div>
-                    <div>Боты ходят после тебя и тоже могут отнимать пограничные клетки.</div>
-                </div>
-
-                <div class="meta" aria-label="Статистика">
-                    <div class="meta-item">
-                        <strong id="winsValue">0</strong>
-                        <span>Побед</span>
-                    </div>
-                    <div class="meta-item">
-                        <strong id="bestValue">0%</strong>
-                        <span>Лучший результат</span>
-                    </div>
-                    <div class="meta-item">
-                        <strong id="gamesValue">0</strong>
-                        <span>Игр</span>
-                    </div>
-                </div>
-            </aside>
-        </section>
+        </footer>
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -585,7 +390,7 @@
     <script>
         const BOARD_SIZE = 13;
         const MAX_ROUNDS = 32;
-        const STORAGE_KEY = "colorwars-pwa-state-v1";
+        const STORAGE_KEY = "colorrise-pwa-state-v2";
         const STATS_KEY = "colorwars-pwa-stats-v1";
         const COLORS = [
             "#ff595e",
@@ -597,26 +402,21 @@
         ];
         const PLAYERS = [
             { id: 0, name: "Ты", label: "Игрок", color: "#ffffff", start: [0, 0] },
-            { id: 1, name: "Cyan AI", label: "Северо-восток", color: "#66e3ff", start: [BOARD_SIZE - 1, 0] },
-            { id: 2, name: "Rose AI", label: "Юго-запад", color: "#ff7aa8", start: [0, BOARD_SIZE - 1] },
-            { id: 3, name: "Lime AI", label: "Юго-восток", color: "#95ff70", start: [BOARD_SIZE - 1, BOARD_SIZE - 1] }
+            { id: 1, name: "Робот", label: "Соперник", color: "#66e3ff", start: [BOARD_SIZE - 1, BOARD_SIZE - 1] }
         ];
 
         const boardEl = document.getElementById("board");
         const paletteEl = document.getElementById("palette");
         const scoreListEl = document.getElementById("scoreList");
-        const roundInfoEl = document.getElementById("roundInfo");
-        const statusTitleEl = document.getElementById("statusTitle");
-        const statusTextEl = document.getElementById("statusText");
         const newGameButton = document.getElementById("newGameButton");
-        const undoButton = document.getElementById("undoButton");
-        const winsValueEl = document.getElementById("winsValue");
-        const bestValueEl = document.getElementById("bestValue");
-        const gamesValueEl = document.getElementById("gamesValue");
+        const restartButton = document.getElementById("restartButton");
+        const menuButton = document.getElementById("menuButton");
+        const menuDropdown = document.getElementById("menuDropdown");
+        const menuItemButton = document.getElementById("menuItemButton");
         const toastEl = document.getElementById("toast");
-        const installHintEl = document.getElementById("installHint");
 
         let cells = [];
+        let initialCells = [];
         let currentRound = 1;
         let gameOver = false;
         let isResolvingAi = false;
@@ -626,6 +426,10 @@
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
+        }
+
+        function cloneCells(source) {
+            return source.map((cell) => ({ ...cell }));
         }
 
         function indexOf(x, y) {
@@ -685,7 +489,8 @@
 
         function snapshot() {
             return {
-                cells: cells.map((cell) => ({ ...cell })),
+                cells: cloneCells(cells),
+                initialCells: cloneCells(initialCells),
                 currentRound,
                 gameOver
             };
@@ -695,7 +500,8 @@
             if (!saved) {
                 return;
             }
-            cells = saved.cells.map((cell) => ({ ...cell }));
+            cells = cloneCells(saved.cells);
+            initialCells = cloneCells(saved.initialCells || saved.cells);
             currentRound = saved.currentRound;
             gameOver = saved.gameOver;
             previousSnapshot = null;
@@ -706,7 +512,7 @@
         }
 
         function serializeGame() {
-            return JSON.stringify({ cells, currentRound, gameOver });
+            return JSON.stringify({ cells, initialCells, currentRound, gameOver });
         }
 
         function saveGame() {
@@ -723,12 +529,23 @@
                 if (!Array.isArray(saved.cells) || saved.cells.length !== BOARD_SIZE * BOARD_SIZE) {
                     return false;
                 }
+                if (saved.cells.some((cell) => Number(cell.owner) >= PLAYERS.length)) {
+                    return false;
+                }
                 cells = saved.cells.map((cell) => ({
                     x: Number(cell.x),
                     y: Number(cell.y),
                     color: Number(cell.color),
                     owner: Number(cell.owner)
                 }));
+                initialCells = Array.isArray(saved.initialCells) && saved.initialCells.length === BOARD_SIZE * BOARD_SIZE
+                    ? saved.initialCells.map((cell) => ({
+                        x: Number(cell.x),
+                        y: Number(cell.y),
+                        color: Number(cell.color),
+                        owner: Number(cell.owner)
+                    }))
+                    : cloneCells(cells);
                 currentRound = Number(saved.currentRound) || 1;
                 gameOver = Boolean(saved.gameOver);
                 return true;
@@ -761,7 +578,7 @@
         function territoryCounts(source = cells) {
             const counts = PLAYERS.map(() => 0);
             source.forEach((cell) => {
-                if (cell.owner >= 0) {
+                if (cell.owner >= 0 && cell.owner < counts.length) {
                     counts[cell.owner] += 1;
                 }
             });
@@ -779,7 +596,7 @@
         }
 
         function isFrontierCell(cell) {
-            if (cell.owner === 0) {
+            if (cell.owner !== -1) {
                 return false;
             }
             return neighborsOf(cell.x, cell.y).some(([nx, ny]) => ownerAt(nx, ny) === 0);
@@ -790,7 +607,6 @@
             const queue = [];
             const visited = new Set();
             let captured = 0;
-            let stolen = 0;
 
             nextCells.forEach((cell) => {
                 if (cell.owner === playerId) {
@@ -812,24 +628,26 @@
                         return;
                     }
                     visited.add(key);
-                    if (neighbor.owner !== playerId) {
-                        if (neighbor.owner >= 0) {
-                            stolen += 1;
-                        }
-                        captured += 1;
-                        neighbor.owner = playerId;
-                        neighbor.color = colorIndex;
+                    if (neighbor.owner === playerId) {
+                        queue.push([nx, ny]);
+                        return;
                     }
+                    if (neighbor.owner >= 0) {
+                        return;
+                    }
+                    captured += 1;
+                    neighbor.owner = playerId;
+                    neighbor.color = colorIndex;
                     queue.push([nx, ny]);
                 });
             }
 
-            return { nextCells, captured, stolen };
+            return { nextCells, captured };
         }
 
         function legalColorsFor(playerId, source = cells) {
-            const ownColor = playerColor(playerId, source);
-            return COLORS.map((_, index) => index).filter((index) => index !== ownColor);
+            const blockedColors = new Set(PLAYERS.map((player) => playerColor(player.id, source)));
+            return COLORS.map((_, index) => index).filter((index) => !blockedColors.has(index));
         }
 
         function chooseAiColor(playerId) {
@@ -840,7 +658,7 @@
             legal.forEach((colorIndex) => {
                 const result = floodForPlayer(playerId, colorIndex);
                 const counts = territoryCounts(result.nextCells);
-                const score = result.captured + result.stolen * 1.7 + counts[playerId] * 0.04 + Math.random() * 0.25;
+                const score = result.captured + counts[playerId] * 0.04 + Math.random() * 0.25;
                 if (score > bestScore) {
                     bestScore = score;
                     bestColor = colorIndex;
@@ -878,8 +696,6 @@
 
         async function runAiTurns() {
             isResolvingAi = true;
-            statusTitleEl.textContent = "Ход соперников";
-            statusTextEl.textContent = "Боты оценивают соседние цвета...";
             updatePaletteState();
 
             for (const player of PLAYERS.slice(1)) {
@@ -927,9 +743,7 @@
             saveGame();
 
             const title = winnerId === 0 ? "Победа!" : `Победил ${PLAYERS[winnerId].name}`;
-            const text = `Твой результат: ${playerPercent}% территории. Нажми "Новая карта", чтобы начать заново.`;
-            statusTitleEl.textContent = title;
-            statusTextEl.textContent = text;
+            const text = `Твой результат: ${playerPercent}% территории.`;
             showToast(`${title} ${text}`);
 
             if (shouldRender) {
@@ -974,23 +788,16 @@
         function renderScores() {
             const counts = territoryCounts();
             const fragment = document.createDocumentFragment();
-            PLAYERS.forEach((player) => {
+            PLAYERS.forEach((player, index) => {
                 const count = counts[player.id];
                 const percent = Math.round((count / cells.length) * 100);
-                const row = document.createElement("div");
-                row.className = "score-row";
-                row.style.setProperty("--player-color", player.color);
-                row.style.setProperty("--score-width", `${percent}%`);
-                row.innerHTML = `
-                    <span class="player-dot" aria-hidden="true"></span>
-                    <span class="score-name">
-                        <strong>${player.name}</strong>
-                        <span>${player.label}</span>
-                    </span>
-                    <span class="score-value">${percent}%</span>
-                    <span class="progress" aria-hidden="true"><span></span></span>
-                `;
-                fragment.appendChild(row);
+                const segment = document.createElement("div");
+                segment.className = `score-segment ${index === 0 ? "human" : "robot"}`;
+                segment.style.setProperty("--player-color", COLORS[playerColor(player.id)]);
+                segment.style.setProperty("--score-width", `${percent}%`);
+                segment.setAttribute("aria-label", `${player.name}: ${percent}%`);
+                segment.innerHTML = `<span>${percent}%</span>`;
+                fragment.appendChild(segment);
             });
             scoreListEl.replaceChildren(fragment);
         }
@@ -1017,37 +824,10 @@
             });
         }
 
-        function renderStats() {
-            winsValueEl.textContent = String(stats.wins);
-            bestValueEl.textContent = `${stats.best}%`;
-            gamesValueEl.textContent = String(stats.games);
-        }
-
-        function renderStatus() {
-            roundInfoEl.textContent = `Раунд ${Math.min(currentRound, MAX_ROUNDS)} / ${MAX_ROUNDS}`;
-            undoButton.disabled = !previousSnapshot || isResolvingAi || gameOver;
-
-            if (gameOver) {
-                return;
-            }
-            if (isResolvingAi) {
-                statusTitleEl.textContent = "Ход соперников";
-                statusTextEl.textContent = "Боты выбирают цвета для атаки по границам.";
-                return;
-            }
-
-            const counts = territoryCounts();
-            const percent = Math.round((counts[0] / cells.length) * 100);
-            statusTitleEl.textContent = "Твой ход";
-            statusTextEl.textContent = `Сейчас у тебя ${percent}% поля. Выбери цвет, который касается твоей границы.`;
-        }
-
         function render() {
             renderBoard();
             renderScores();
             renderPalette();
-            renderStats();
-            renderStatus();
         }
 
         function showToast(message) {
@@ -1059,44 +839,81 @@
             }, 2600);
         }
 
-        function startNewGame() {
+        function setFreshBoard() {
             cells = createBoard();
+            initialCells = cloneCells(cells);
+            currentRound = 1;
+            gameOver = false;
+            isResolvingAi = false;
+            previousSnapshot = null;
+        }
+
+        function restartMatch() {
+            cells = cloneCells(initialCells);
             currentRound = 1;
             gameOver = false;
             isResolvingAi = false;
             previousSnapshot = null;
             saveGame();
             render();
-            showToast("Новая карта готова. Начинай с выбора цвета.");
+            showToast("Начали сначала.");
+        }
+
+        function startNewGame() {
+            setFreshBoard();
+            saveGame();
+            render();
+            showToast("Новая карта готова.");
+        }
+
+        function toggleMenu(forceOpen) {
+            const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : menuDropdown.hidden;
+            menuDropdown.hidden = !shouldOpen;
+            menuButton.setAttribute("aria-expanded", String(shouldOpen));
         }
 
         function registerServiceWorker() {
             if (!("serviceWorker" in navigator)) {
-                installHintEl.textContent = "Service Worker не поддерживается этим браузером";
                 return;
             }
 
             window.addEventListener("load", () => {
                 navigator.serviceWorker.register("/sw.js")
-                    .then(() => {
-                        installHintEl.textContent = "PWA готова: можно установить и играть офлайн";
-                    })
-                    .catch(() => {
-                        installHintEl.textContent = "Игра запущена, офлайн-кэш пока недоступен";
-                    });
+                    .catch(() => {});
             });
         }
 
         function init() {
             if (!loadGame()) {
-                cells = createBoard();
+                setFreshBoard();
                 saveGame();
             }
             render();
             registerServiceWorker();
 
-            newGameButton.addEventListener("click", startNewGame);
-            undoButton.addEventListener("click", () => restoreSnapshot(previousSnapshot));
+            restartButton.addEventListener("click", () => {
+                toggleMenu(false);
+                restartMatch();
+            });
+            newGameButton.addEventListener("click", () => {
+                toggleMenu(false);
+                startNewGame();
+            });
+            menuItemButton.addEventListener("click", () => {
+                toggleMenu(false);
+                showToast("Меню пока в разработке.");
+            });
+            menuButton.addEventListener("click", () => toggleMenu());
+            document.addEventListener("click", (event) => {
+                if (!menuDropdown.hidden && !event.target.closest(".menu-shell")) {
+                    toggleMenu(false);
+                }
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    toggleMenu(false);
+                }
+            });
         }
 
         init();
