@@ -647,9 +647,15 @@
 
         .palette {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: clamp(4px, 1.1vw, 8px);
             margin: 0;
+        }
+
+        .bottom-bar .color-btn {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: auto;
         }
 
         .color-btn {
@@ -999,9 +1005,9 @@
                     </button>
                     <div class="game-dropdown" id="gameDropdown" role="menu" aria-label="Меню игры">
                         <div class="game-dropdown-title">COLORRISE</div>
-                        <button class="dropdown-item" id="restartButton" type="button" role="menuitem">сначала</button>
-                        <button class="dropdown-item" id="newGameButton" type="button" role="menuitem">новая</button>
-                        <button class="dropdown-item" id="backToMenuButton" type="button" role="menuitem">меню</button>
+                        <button class="dropdown-item" id="restartButton" type="button" role="menuitem">Начать сначала</button>
+                        <button class="dropdown-item" id="newGameButton" type="button" role="menuitem">Новая игра</button>
+                        <button class="dropdown-item" id="backToMenuButton" type="button" role="menuitem">Меню</button>
                     </div>
                 </div>
             </footer>
