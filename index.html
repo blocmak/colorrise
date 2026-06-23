@@ -14,7 +14,7 @@
             --bg: #0d1020;
             --panel: rgba(18, 24, 45, 0.9);
             --text: #f8fbff;
-            --muted: #9ba9c9;
+            --muted: #a6b2cf;
             --accent: #66e3ff;
             --radius: 22px;
             --shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
@@ -37,8 +37,8 @@
             margin: 0;
             overflow: hidden;
             background:
-                radial-gradient(circle at top left, rgba(102, 227, 255, 0.24), transparent 32rem),
-                radial-gradient(circle at bottom right, rgba(255, 107, 138, 0.22), transparent 30rem),
+                radial-gradient(circle at 14% 8%, rgba(102, 227, 255, 0.24), transparent 32rem),
+                radial-gradient(circle at 86% 92%, rgba(255, 122, 76, 0.2), transparent 30rem),
                 linear-gradient(135deg, #090d1a 0%, #101528 52%, #17113a 100%);
             color: var(--text);
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -50,6 +50,10 @@
             color: inherit;
             font: inherit;
             cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
         }
 
         .app {
@@ -122,12 +126,11 @@
 
         .board {
             display: grid;
-            grid-template-columns: repeat(13, 1fr);
-            gap: clamp(2px, 0.45vw, 5px);
+            gap: clamp(1px, 0.22vw, 3px);
             width: 100%;
             height: 100%;
-            padding: clamp(5px, 1vw, 9px);
-            border-radius: 22px;
+            padding: clamp(3px, 0.7vw, 6px);
+            border-radius: 14px;
             background: rgba(2, 6, 17, 0.62);
             box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
         }
@@ -135,7 +138,10 @@
         .cell {
             position: relative;
             min-width: 0;
-            border-radius: clamp(7px, 1.1vw, 13px);
+            padding: 0;
+            border: 0;
+            border-radius: clamp(3px, 0.55vw, 7px);
+            appearance: none;
             background: var(--cell-color);
             box-shadow:
                 inset 0 0 0 1px rgba(255, 255, 255, 0.2),
@@ -193,26 +199,24 @@
             border-radius: 16px;
             background: var(--choice-color);
             box-shadow:
-                inset 0 0 0 2px rgba(255, 255, 255, 0.3),
+                inset 0 0 0 2px rgba(255, 255, 255, 0.32),
                 0 10px 22px rgba(0, 0, 0, 0.22);
             transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
         }
 
-        .color-btn:hover,
-        .color-btn:focus-visible {
+        .color-btn:hover:not(:disabled),
+        .color-btn:focus-visible:not(:disabled) {
             transform: translateY(-2px);
-            outline: 3px solid rgba(255, 255, 255, 0.35);
+            outline: 3px solid rgba(255, 255, 255, 0.34);
         }
 
-        .color-btn:active {
+        .color-btn:active:not(:disabled) {
             transform: translateY(1px) scale(0.98);
         }
 
         .color-btn:disabled {
-            cursor: not-allowed;
-            filter: grayscale(0.55);
-            opacity: 0.45;
-            transform: none;
+            filter: grayscale(0.72);
+            opacity: 0.38;
         }
 
         .toast {
@@ -351,10 +355,6 @@
                 min-height: 44px;
                 border-radius: 13px;
             }
-
-            .cell::after {
-                content: "" !important;
-            }
         }
     </style>
 </head>
@@ -385,7 +385,60 @@
         </footer>
     </main>
 
+    <div class="dialog-backdrop" id="settingsDialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="dialog">
+            <h2 id="settingsTitle">Настройки</h2>
+            <p>Выберите размер игрового поля. Размер плиток автоматически подстроится под выбранную ширину и высоту.</p>
+            <div class="settings-grid">
+                <label class="settings-field" for="boardWidthInput">
+                    Количество плиток по горизонтали
+                    <span>Минимум 6, максимум 24.</span>
+                    <input id="boardWidthInput" type="number" min="6" max="24" step="1" inputmode="numeric">
+                </label>
+                <label class="settings-field" for="boardHeightInput">
+                    Количество плиток по вертикали
+                    <span>Минимум 6, максимум 24.</span>
+                    <input id="boardHeightInput" type="number" min="6" max="24" step="1" inputmode="numeric">
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <button class="action-btn" id="settingsCloseButton" type="button">Закрыть</button>
+                <button class="action-btn primary" id="settingsSaveButton" type="button">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-backdrop" id="rulesDialog" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+        <div class="dialog">
+            <h2 id="rulesTitle">Правила игры</h2>
+            <ol>
+                <li>Играют два участника: человек и компьютер.</li>
+                <li>Каждый игрок начинает в своём углу со случайной связной территорией одного цвета.</li>
+                <li>За ход выберите цвет снизу или тапните плитку такого цвета на поле.</li>
+                <li>Нельзя выбрать свой текущий цвет или цвет соперника.</li>
+                <li>Все ваши плитки перекрашиваются, а соседние плитки выбранного цвета становятся вашими.</li>
+                <li>Замкнутые области захватываются целиком, даже если часть границы проходит по краю поля.</li>
+                <li>Побеждает тот, кто первым захватит больше 50% поля.</li>
+            </ol>
+            <div class="dialog-actions">
+                <button class="action-btn primary" id="rulesCloseButton" type="button">Понятно</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="endgame-effect" id="endgameEffect" role="status" aria-live="assertive">
+        <div class="effect-layer" id="effectLayer" aria-hidden="true"></div>
+        <div class="endgame-card">
+            <h2 id="endgameTitle"></h2>
+            <p id="endgameText"></p>
+            <div class="endgame-actions">
+                <button class="action-btn primary" id="endgameNewGameButton" type="button">Новая игра</button>
+                <button class="action-btn" id="endgameReplayButton" type="button">Переиграть</button>
+                <button class="action-btn" id="endgameMenuButton" type="button">Меню</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const BOARD_SIZE = 13;
@@ -393,19 +446,33 @@
         const STORAGE_KEY = "colorrise-pwa-state-v2";
         const STATS_KEY = "colorwars-pwa-stats-v1";
         const COLORS = [
-            "#ff595e",
-            "#ffca3a",
-            "#8ac926",
-            "#1982c4",
-            "#6a4c93",
-            "#f15bb5"
+            { name: "Жёлтый", value: "#f5f45e" },
+            { name: "Синий", value: "#0101ff" },
+            { name: "Оранжевый", value: "#fe9e2e" },
+            { name: "Голубой", value: "#7cbce2" },
+            { name: "Зелёный", value: "#007701" },
+            { name: "Красный", value: "#db0102" },
+            { name: "Серый", value: "#7b7b7b" }
         ];
         const PLAYERS = [
             { id: 0, name: "Ты", label: "Игрок", color: "#ffffff", start: [0, 0] },
             { id: 1, name: "Робот", label: "Соперник", color: "#66e3ff", start: [BOARD_SIZE - 1, BOARD_SIZE - 1] }
         ];
 
+        const startScreenEl = document.getElementById("startScreen");
+        const gameScreenEl = document.getElementById("gameScreen");
+        const menuStartButton = document.getElementById("menuStartButton");
+        const menuSettingsButton = document.getElementById("menuSettingsButton");
+        const menuRulesButton = document.getElementById("menuRulesButton");
+        const settingsDialogEl = document.getElementById("settingsDialog");
+        const rulesDialogEl = document.getElementById("rulesDialog");
+        const boardWidthInput = document.getElementById("boardWidthInput");
+        const boardHeightInput = document.getElementById("boardHeightInput");
+        const settingsCloseButton = document.getElementById("settingsCloseButton");
+        const settingsSaveButton = document.getElementById("settingsSaveButton");
+        const rulesCloseButton = document.getElementById("rulesCloseButton");
         const boardEl = document.getElementById("board");
+        const boardWrapEl = document.getElementById("boardWrap");
         const paletteEl = document.getElementById("palette");
         const scoreListEl = document.getElementById("scoreList");
         const newGameButton = document.getElementById("newGameButton");
@@ -415,14 +482,15 @@
         const menuItemButton = document.getElementById("menuItemButton");
         const toastEl = document.getElementById("toast");
 
+        let boardWidth = DEFAULT_BOARD_WIDTH;
+        let boardHeight = DEFAULT_BOARD_HEIGHT;
         let cells = [];
         let initialCells = [];
         let currentRound = 1;
         let gameOver = false;
-        let isResolvingAi = false;
-        let previousSnapshot = null;
+        let winnerId = null;
+        let aiThinking = false;
         let toastTimer = 0;
-        let stats = loadStats();
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
@@ -433,11 +501,11 @@
         }
 
         function indexOf(x, y) {
-            return y * BOARD_SIZE + x;
+            return y * boardWidth + x;
         }
 
         function getCell(x, y, source = cells) {
-            if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) {
+            if (x < 0 || y < 0 || x >= boardWidth || y >= boardHeight) {
                 return null;
             }
             return source[indexOf(x, y)];
@@ -449,13 +517,131 @@
                 [x - 1, y],
                 [x, y + 1],
                 [x, y - 1]
-            ].filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < BOARD_SIZE && ny < BOARD_SIZE);
+            ].filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < boardWidth && ny < boardHeight);
+        }
+
+        function cloneCells(source = cells) {
+            return source.map((cell) => ({ ...cell }));
+        }
+
+        function cloneSnapshot(snapshot) {
+            return {
+                boardWidth: snapshot.boardWidth,
+                boardHeight: snapshot.boardHeight,
+                cells: snapshot.cells.map((cell) => ({ ...cell })),
+                currentPlayer: snapshot.currentPlayer,
+                moveNumber: snapshot.moveNumber,
+                gameOver: snapshot.gameOver,
+                winnerId: snapshot.winnerId
+            };
+        }
+
+        function makeSnapshot() {
+            return {
+                boardWidth,
+                boardHeight,
+                cells: cloneCells(),
+                currentPlayer,
+                moveNumber,
+                gameOver,
+                winnerId
+            };
+        }
+
+        function restoreSnapshot(snapshot) {
+            const restored = cloneSnapshot(snapshot);
+            boardWidth = restored.boardWidth;
+            boardHeight = restored.boardHeight;
+            cells = restored.cells;
+            currentPlayer = restored.currentPlayer;
+            moveNumber = restored.moveNumber;
+            gameOver = restored.gameOver;
+            winnerId = restored.winnerId;
+            aiThinking = false;
+            syncSettingsInputs();
+            clearEndgameEffect();
+            saveGame();
+            render();
+        }
+
+        function cornerPosition(corner) {
+            const fromLeft = corner.includes("left");
+            const fromTop = corner.includes("top");
+            return [
+                fromLeft ? 0 : boardWidth - 1,
+                fromTop ? 0 : boardHeight - 1
+            ];
+        }
+
+        function randomStartingSeeds(corner) {
+            const [startX, startY] = cornerPosition(corner);
+            const targetSize = START_MIN_SEEDS
+                + Math.floor(Math.random() * (START_MAX_SEEDS - START_MIN_SEEDS + 1));
+            const seeds = [[startX, startY]];
+            const used = new Set([indexOf(startX, startY)]);
+
+            while (seeds.length < targetSize) {
+                const candidates = [];
+                seeds.forEach(([x, y]) => {
+                    neighborsOf(x, y).forEach(([nx, ny]) => {
+                        const key = indexOf(nx, ny);
+                        if (!used.has(key)) {
+                            candidates.push([nx, ny]);
+                        }
+                    });
+                });
+
+                if (!candidates.length) {
+                    break;
+                }
+
+                const [nextX, nextY] = candidates[Math.floor(Math.random() * candidates.length)];
+                used.add(indexOf(nextX, nextY));
+                seeds.push([nextX, nextY]);
+            }
+
+            return seeds;
+        }
+
+        function claimStartingRegion(playerId, corner, colorIndex, source) {
+            const queue = [];
+            const visited = new Set();
+
+            randomStartingSeeds(corner).forEach(([x, y]) => {
+                const cell = getCell(x, y, source);
+                cell.owner = playerId;
+                cell.color = colorIndex;
+                queue.push([x, y]);
+                visited.add(indexOf(x, y));
+            });
+
+            while (queue.length) {
+                const [x, y] = queue.shift();
+                neighborsOf(x, y).forEach(([nx, ny]) => {
+                    const key = indexOf(nx, ny);
+                    if (visited.has(key)) {
+                        return;
+                    }
+
+                    const neighbor = getCell(nx, ny, source);
+                    if (!neighbor || neighbor.color !== colorIndex) {
+                        return;
+                    }
+
+                    visited.add(key);
+                    neighbor.owner = playerId;
+                    neighbor.color = colorIndex;
+                    queue.push([nx, ny]);
+                });
+            }
+
+            return visited.size;
         }
 
         function createBoard() {
             const nextCells = [];
-            for (let y = 0; y < BOARD_SIZE; y++) {
-                for (let x = 0; x < BOARD_SIZE; x++) {
+            for (let y = 0; y < boardHeight; y++) {
+                for (let x = 0; x < boardWidth; x++) {
                     nextCells.push({
                         x,
                         y,
@@ -465,23 +651,12 @@
                 }
             }
 
+            const humanColor = randomColorIndex();
+            const computerColor = randomDistinctColor(humanColor);
+            const startingColors = [humanColor, computerColor];
+
             PLAYERS.forEach((player) => {
-                const [sx, sy] = player.start;
-                const anchorColor = player.id % COLORS.length;
-                const xDirection = sx === 0 ? 1 : -1;
-                const yDirection = sy === 0 ? 1 : -1;
-                [
-                    [sx, sy],
-                    [sx + xDirection, sy],
-                    [sx, sy + yDirection],
-                    [sx + xDirection, sy + yDirection]
-                ].forEach(([x, y]) => {
-                    const cell = getCell(x, y, nextCells);
-                    if (cell) {
-                        cell.owner = player.id;
-                        cell.color = anchorColor;
-                    }
-                });
+                claimStartingRegion(player.id, player.corner, startingColors[player.id], nextCells);
             });
 
             return nextCells;
@@ -519,6 +694,51 @@
             localStorage.setItem(STORAGE_KEY, serializeGame());
         }
 
+        function isValidSavedCells(savedCells) {
+            return Array.isArray(savedCells)
+                && savedCells.length === boardArea()
+                && savedCells.every((cell) => Number.isInteger(cell.x)
+                    && Number.isInteger(cell.y)
+                    && Number.isInteger(cell.color)
+                    && Number.isInteger(cell.owner)
+                    && cell.x >= 0
+                    && cell.y >= 0
+                    && cell.x < boardWidth
+                    && cell.y < boardHeight
+                    && cell.color >= 0
+                    && cell.color < COLORS.length
+                    && cell.owner >= -1
+                    && cell.owner <= 1);
+        }
+
+        function normalizeSnapshot(snapshot) {
+            if (!snapshot) {
+                return null;
+            }
+            const savedWidth = clampDimension(snapshot.boardWidth, boardWidth);
+            const savedHeight = clampDimension(snapshot.boardHeight, boardHeight);
+            const previousWidth = boardWidth;
+            const previousHeight = boardHeight;
+            boardWidth = savedWidth;
+            boardHeight = savedHeight;
+            const validCells = isValidSavedCells(snapshot.cells);
+            boardWidth = previousWidth;
+            boardHeight = previousHeight;
+
+            if (!validCells) {
+                return null;
+            }
+            return {
+                boardWidth: savedWidth,
+                boardHeight: savedHeight,
+                cells: snapshot.cells.map((cell) => ({ ...cell })),
+                currentPlayer: snapshot.currentPlayer === 1 ? 1 : 0,
+                moveNumber: Math.max(1, Number(snapshot.moveNumber) || 1),
+                gameOver: Boolean(snapshot.gameOver),
+                winnerId: snapshot.winnerId === 0 || snapshot.winnerId === 1 ? snapshot.winnerId : null
+            };
+        }
+
         function loadGame() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
@@ -526,7 +746,9 @@
                     return false;
                 }
                 const saved = JSON.parse(raw);
-                if (!Array.isArray(saved.cells) || saved.cells.length !== BOARD_SIZE * BOARD_SIZE) {
+                boardWidth = clampDimension(saved.boardWidth, DEFAULT_BOARD_WIDTH);
+                boardHeight = clampDimension(saved.boardHeight, DEFAULT_BOARD_HEIGHT);
+                if (!isValidSavedCells(saved.cells)) {
                     return false;
                 }
                 if (saved.cells.some((cell) => Number(cell.owner) >= PLAYERS.length)) {
@@ -548,35 +770,16 @@
                     : cloneCells(cells);
                 currentRound = Number(saved.currentRound) || 1;
                 gameOver = Boolean(saved.gameOver);
-                return true;
+                winnerId = saved.winnerId === 0 || saved.winnerId === 1 ? saved.winnerId : null;
+
+                return Boolean(initialSnapshot);
             } catch (error) {
                 return false;
             }
         }
 
-        function loadStats() {
-            try {
-                const raw = localStorage.getItem(STATS_KEY);
-                if (!raw) {
-                    return { wins: 0, best: 0, games: 0 };
-                }
-                const parsed = JSON.parse(raw);
-                return {
-                    wins: Number(parsed.wins) || 0,
-                    best: Number(parsed.best) || 0,
-                    games: Number(parsed.games) || 0
-                };
-            } catch (error) {
-                return { wins: 0, best: 0, games: 0 };
-            }
-        }
-
-        function saveStats() {
-            localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-        }
-
         function territoryCounts(source = cells) {
-            const counts = PLAYERS.map(() => 0);
+            const counts = [0, 0];
             source.forEach((cell) => {
                 if (cell.owner >= 0 && cell.owner < counts.length) {
                     counts[cell.owner] += 1;
@@ -585,14 +788,13 @@
             return counts;
         }
 
-        function playerColor(playerId, source = cells) {
+        function currentColorOf(playerId, source = cells) {
             const owned = source.find((cell) => cell.owner === playerId);
-            return owned ? owned.color : playerId % COLORS.length;
+            return owned ? owned.color : -1;
         }
 
-        function ownerAt(x, y) {
-            const cell = getCell(x, y);
-            return cell ? cell.owner : -1;
+        function opponentOf(playerId) {
+            return playerId === 0 ? 1 : 0;
         }
 
         function isFrontierCell(cell) {
@@ -602,13 +804,12 @@
             return neighborsOf(cell.x, cell.y).some(([nx, ny]) => ownerAt(nx, ny) === 0);
         }
 
-        function floodForPlayer(playerId, colorIndex, source = cells) {
-            const nextCells = source.map((cell) => ({ ...cell }));
+        function applyFloodCapture(playerId, colorIndex, source) {
             const queue = [];
             const visited = new Set();
             let captured = 0;
 
-            nextCells.forEach((cell) => {
+            source.forEach((cell) => {
                 if (cell.owner === playerId) {
                     cell.color = colorIndex;
                     queue.push([cell.x, cell.y]);
@@ -623,10 +824,12 @@
                     if (visited.has(key)) {
                         return;
                     }
-                    const neighbor = getCell(nx, ny, nextCells);
+
+                    const neighbor = getCell(nx, ny, source);
                     if (!neighbor || neighbor.color !== colorIndex) {
                         return;
                     }
+
                     visited.add(key);
                     if (neighbor.owner === playerId) {
                         queue.push([nx, ny]);
@@ -650,13 +853,114 @@
             return COLORS.map((_, index) => index).filter((index) => !blockedColors.has(index));
         }
 
-        function chooseAiColor(playerId) {
-            const legal = legalColorsFor(playerId);
+        function applySurroundCapture(playerId, colorIndex, source) {
+            const visited = new Set();
+            const components = [];
+            let capturedBySurround = 0;
+            let stolenBySurround = 0;
+
+            source.forEach((cell) => {
+                const startKey = indexOf(cell.x, cell.y);
+                if (cell.owner === playerId || visited.has(startKey)) {
+                    return;
+                }
+
+                const component = [];
+                const queue = [[cell.x, cell.y]];
+                let edgeMask = 0;
+                visited.add(startKey);
+
+                while (queue.length) {
+                    const [x, y] = queue.shift();
+                    const current = getCell(x, y, source);
+                    component.push(current);
+                    edgeMask |= edgeMaskForCell(current);
+
+                    neighborsOf(x, y).forEach(([nx, ny]) => {
+                        const neighbor = getCell(nx, ny, source);
+                        const key = indexOf(nx, ny);
+
+                        if (neighbor.owner === playerId) {
+                            return;
+                        }
+
+                        if (visited.has(key)) {
+                            return;
+                        }
+
+                        visited.add(key);
+                        queue.push([nx, ny]);
+                    });
+                }
+
+                components.push({
+                    cells: component,
+                    edgeMask,
+                    edgeCount: bitCount(edgeMask)
+                });
+            });
+
+            if (!components.length) {
+                return { capturedBySurround, stolenBySurround };
+            }
+
+            if (components.length === 1) {
+                if (components[0].edgeCount === 0) {
+                    const captured = captureSurroundedComponent(components[0], playerId, colorIndex);
+                    capturedBySurround += captured.capturedBySurround;
+                    stolenBySurround += captured.stolenBySurround;
+                }
+                return { capturedBySurround, stolenBySurround };
+            }
+
+            const exterior = components.reduce((best, component) => {
+                if (component.edgeCount !== best.edgeCount) {
+                    return component.edgeCount > best.edgeCount ? component : best;
+                }
+                return component.cells.length > best.cells.length ? component : best;
+            });
+
+            components.forEach((component) => {
+                if (component === exterior) {
+                    return;
+                }
+                const captured = captureSurroundedComponent(component, playerId, colorIndex);
+                capturedBySurround += captured.capturedBySurround;
+                stolenBySurround += captured.stolenBySurround;
+            });
+
+            return { capturedBySurround, stolenBySurround };
+        }
+
+        function simulateMove(playerId, colorIndex, source = cells) {
+            const nextCells = cloneCells(source);
+            const before = territoryCounts(nextCells)[playerId];
+            const flood = applyFloodCapture(playerId, colorIndex, nextCells);
+            const surround = applySurroundCapture(playerId, colorIndex, nextCells);
+            const after = territoryCounts(nextCells)[playerId];
+
+            return {
+                nextCells,
+                gained: after - before,
+                capturedByColor: flood.capturedByColor,
+                capturedBySurround: surround.capturedBySurround,
+                stolen: flood.stolenByColor + surround.stolenBySurround
+            };
+        }
+
+        function applyMove(playerId, colorIndex) {
+            const result = simulateMove(playerId, colorIndex);
+            cells = result.nextCells;
+            return result;
+        }
+
+        function chooseComputerColor() {
+            const legal = legalColorsFor(1);
             let bestColor = legal[0];
             let bestScore = -Infinity;
 
             legal.forEach((colorIndex) => {
-                const result = floodForPlayer(playerId, colorIndex);
+                const result = simulateMove(1, colorIndex);
                 const counts = territoryCounts(result.nextCells);
                 const score = result.captured + counts[playerId] * 0.04 + Math.random() * 0.25;
                 if (score > bestScore) {
@@ -668,22 +972,30 @@
             return bestColor;
         }
 
-        function applyMove(playerId, colorIndex) {
-            const result = floodForPlayer(playerId, colorIndex);
-            cells = result.nextCells;
-            return result;
+        function finishIfNeeded() {
+            const counts = territoryCounts();
+            const leader = counts[0] > counts[1] ? 0 : 1;
+            if (counts[leader] < winThreshold()) {
+                return false;
+            }
+
+            gameOver = true;
+            winnerId = leader;
+            currentPlayer = leader;
+            saveGame();
+            render();
+
+            showEndgameEffect(winnerId);
+            return true;
         }
 
         function handleHumanMove(colorIndex) {
-            if (gameOver || isResolvingAi || !legalColorsFor(0).includes(colorIndex)) {
+            if (gameOver || aiThinking || currentPlayer !== 0) {
                 return;
             }
 
-            previousSnapshot = snapshot();
-            const result = applyMove(0, colorIndex);
-            render();
-
-            if (checkGameOver()) {
+            if (!legalColorsFor(0).includes(colorIndex)) {
+                showToast("Этот цвет выбрать нельзя: он уже твой или принадлежит компьютеру.");
                 return;
             }
 
@@ -709,79 +1021,96 @@
                 checkGameOver(false);
             }
 
-            if (!gameOver) {
-                currentRound += 1;
-                checkGameOver();
+            if (!finishIfNeeded()) {
+                runComputerTurn();
             }
-
-            isResolvingAi = false;
-            render();
-            saveGame();
         }
 
-        function checkGameOver(shouldRender = true) {
-            const counts = territoryCounts();
-            const claimed = counts.reduce((sum, count) => sum + count, 0);
-            const finished = claimed === cells.length || currentRound > MAX_ROUNDS;
-            if (!finished) {
-                saveGame();
-                return false;
-            }
+        async function runComputerTurn() {
+            aiThinking = true;
+            render();
+            await wait(420);
 
-            gameOver = true;
-            const winnerId = counts
-                .map((count, id) => ({ id, count }))
-                .sort((a, b) => b.count - a.count)[0].id;
-            const playerPercent = Math.round((counts[0] / cells.length) * 100);
-
-            stats.games += 1;
-            stats.best = Math.max(stats.best, playerPercent);
-            if (winnerId === 0) {
-                stats.wins += 1;
-            }
-            saveStats();
+            const colorIndex = chooseComputerColor();
+            applyMove(1, colorIndex);
+            currentPlayer = 0;
+            moveNumber += 1;
+            aiThinking = false;
             saveGame();
+            render();
+            finishIfNeeded();
+        }
+
+        function undoMove() {
+            if (aiThinking || !history.length) {
+                return;
+            }
 
             const title = winnerId === 0 ? "Победа!" : `Победил ${PLAYERS[winnerId].name}`;
             const text = `Твой результат: ${playerPercent}% территории.`;
             showToast(`${title} ${text}`);
 
-            if (shouldRender) {
-                render();
+        function restartSameField() {
+            if (!initialSnapshot) {
+                return;
             }
-            return true;
+            history = [];
+            showGameScreen();
+            restoreSnapshot(initialSnapshot);
+            showToast("Партия возвращена к старту на том же поле.");
+        }
+
+        function startNewGame() {
+            showGameScreen();
+            cells = createBoard();
+            currentPlayer = 0;
+            moveNumber = 1;
+            gameOver = false;
+            winnerId = null;
+            aiThinking = false;
+            history = [];
+            initialSnapshot = makeSnapshot();
+            clearEndgameEffect();
+            saveGame();
+            render();
+            showToast("Новое поле готово. Первый ход за человеком.");
         }
 
         function wait(ms) {
             return new Promise((resolve) => window.setTimeout(resolve, ms));
         }
 
-        function pluralize(value, variants) {
-            const mod10 = value % 10;
-            const mod100 = value % 100;
-            if (mod10 === 1 && mod100 !== 11) {
-                return variants[0];
+        function isFrontierCell(cell) {
+            if (cell.owner !== 0) {
+                return false;
             }
-            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-                return variants[1];
-            }
-            return variants[2];
+            return neighborsOf(cell.x, cell.y).some(([nx, ny]) => {
+                const neighbor = getCell(nx, ny);
+                return neighbor && neighbor.owner !== 0;
+            });
         }
 
         function renderBoard() {
+            boardEl.style.gridTemplateColumns = `repeat(${boardWidth}, 1fr)`;
+            boardWrapEl.style.setProperty("--board-ratio", `${boardWidth} / ${boardHeight}`);
             const fragment = document.createDocumentFragment();
+
             cells.forEach((cell) => {
-                const tile = document.createElement("div");
+                const tile = document.createElement("button");
                 tile.className = "cell";
+                tile.type = "button";
                 tile.setAttribute("role", "gridcell");
                 tile.dataset.owner = String(cell.owner);
                 tile.dataset.frontier = String(isFrontierCell(cell));
-                tile.style.setProperty("--cell-color", COLORS[cell.color]);
-                tile.title = cell.owner >= 0
-                    ? `${PLAYERS[cell.owner].name}: ${COLORS[cell.color]}`
-                    : `Свободная клетка: ${COLORS[cell.color]}`;
+                tile.style.setProperty("--cell-color", COLORS[cell.color].value);
+
+                const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
+                tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
+                tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
+                tile.addEventListener("click", () => handleHumanMove(cell.color));
                 fragment.appendChild(tile);
             });
+
             boardEl.replaceChildren(fragment);
         }
 
@@ -799,35 +1128,106 @@
                 segment.innerHTML = `<span>${percent}%</span>`;
                 fragment.appendChild(segment);
             });
+
             scoreListEl.replaceChildren(fragment);
         }
 
         function renderPalette() {
             const legal = new Set(legalColorsFor(0));
+            const ownColor = currentColorOf(0);
+            const computerColor = currentColorOf(1);
             const fragment = document.createDocumentFragment();
+
             COLORS.forEach((color, index) => {
                 const button = document.createElement("button");
+                const disabled = gameOver || aiThinking || currentPlayer !== 0 || !legal.has(index);
+                let reason = "можно выбрать";
+
+                if (index === ownColor) {
+                    reason = "это твой текущий цвет";
+                } else if (index === computerColor) {
+                    reason = "это текущий цвет компьютера";
+                } else if (disabled) {
+                    reason = "ход временно недоступен";
+                }
+
                 button.className = "color-btn";
                 button.type = "button";
-                button.style.setProperty("--choice-color", color);
-                button.disabled = gameOver || isResolvingAi || !legal.has(index);
-                button.setAttribute("aria-label", `Выбрать цвет ${index + 1}`);
+                button.style.setProperty("--choice-color", color.value);
+                button.disabled = disabled;
+                button.title = `${color.name}: ${reason}`;
+                button.setAttribute("aria-label", `Выбрать ${color.name}: ${reason}`);
                 button.addEventListener("click", () => handleHumanMove(index));
                 fragment.appendChild(button);
             });
-            paletteEl.replaceChildren(fragment);
-        }
-
-        function updatePaletteState() {
-            Array.from(paletteEl.children).forEach((button, index) => {
-                button.disabled = gameOver || isResolvingAi || !legalColorsFor(0).includes(index);
-            });
-        }
 
         function render() {
             renderBoard();
             renderScores();
             renderPalette();
+        }
+
+        function clearEndgameEffect() {
+            effectLayerEl.replaceChildren();
+            endgameEffectEl.className = "endgame-effect";
+            endgameTitleEl.textContent = "";
+            endgameTextEl.textContent = "";
+        }
+
+        function showEndgameEffect(playerId) {
+            clearEndgameEffect();
+
+            if (playerId === 0) {
+                endgameTitleEl.textContent = "Победа!";
+                endgameTextEl.textContent = "Ты захватил больше половины поля. Салют!";
+                createFireworks();
+                endgameEffectEl.classList.add("visible", "victory");
+                return;
+            }
+
+            endgameTitleEl.textContent = "Поражение";
+            endgameTextEl.textContent = "Компьютер первым забрал больше половины поля. Можно откатить ход и попробовать иначе.";
+            createDefeatRain();
+            endgameEffectEl.classList.add("visible", "defeat");
+        }
+
+        function createFireworks() {
+            const burstCenters = [
+                ["22%", "28%"],
+                ["50%", "18%"],
+                ["76%", "30%"],
+                ["34%", "62%"],
+                ["68%", "58%"]
+            ];
+            const particleColors = COLORS.map((color) => color.value);
+
+            burstCenters.forEach(([x, y], burstIndex) => {
+                for (let i = 0; i < 18; i++) {
+                    const angle = (Math.PI * 2 * i) / 18;
+                    const distance = 70 + Math.random() * 86;
+                    const particle = document.createElement("span");
+                    particle.className = "firework";
+                    particle.style.setProperty("--x", x);
+                    particle.style.setProperty("--y", y);
+                    particle.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+                    particle.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+                    particle.style.setProperty("--delay", `${burstIndex * 90 + Math.random() * 120}ms`);
+                    particle.style.setProperty("--particle-color", particleColors[(i + burstIndex) % particleColors.length]);
+                    effectLayerEl.appendChild(particle);
+                }
+            });
+        }
+
+        function createDefeatRain() {
+            for (let i = 0; i < 54; i++) {
+                const drop = document.createElement("span");
+                drop.className = "defeat-drop";
+                drop.style.setProperty("--x", `${Math.random() * 100}%`);
+                drop.style.setProperty("--drop-height", `${34 + Math.random() * 58}px`);
+                drop.style.setProperty("--duration", `${900 + Math.random() * 900}ms`);
+                drop.style.setProperty("--delay", `${Math.random() * 520}ms`);
+                effectLayerEl.appendChild(drop);
+            }
         }
 
         function showToast(message) {
