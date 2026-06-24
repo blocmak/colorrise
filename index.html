@@ -894,29 +894,6 @@
             letter-spacing: 0.08em;
         }
 
-        .toast {
-            position: fixed;
-            right: 16px;
-            bottom: 16px;
-            max-width: min(440px, calc(100vw - 32px));
-            padding: 14px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 18px;
-            background: rgba(15, 20, 37, 0.94);
-            box-shadow: var(--shadow);
-            color: var(--text);
-            transform: translateY(18px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 180ms ease, transform 180ms ease;
-            z-index: 20;
-        }
-
-        .toast.visible {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
         .endgame-effect {
             position: fixed;
             inset: 0;
@@ -1136,7 +1113,7 @@
                 <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="menu-title">ColorRise</h1>
                 <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
-                <div class="build-info">Сборка: 2026-06-24 20:41:14 UTC · Версия: colorwars-duel-pwa-v16</div>
+                <div class="build-info">Сборка: 2026-06-24 21:50:45 UTC · Версия: colorwars-duel-pwa-v17</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
@@ -1219,7 +1196,6 @@
         </div>
     </div>
 
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="endgame-effect" id="endgameEffect" role="status" aria-live="assertive">
         <div class="effect-layer" id="effectLayer" aria-hidden="true"></div>
         <div class="endgame-card">
@@ -1293,7 +1269,6 @@
         const backToMenuButton = document.getElementById("backToMenuButton");
         const restartButton = document.getElementById("restartButton");
         const newGameButton = document.getElementById("newGameButton");
-        const toastEl = document.getElementById("toast");
         const endgameEffectEl = document.getElementById("endgameEffect");
         const effectLayerEl = document.getElementById("effectLayer");
         const endgameTitleEl = document.getElementById("endgameTitle");
@@ -1314,7 +1289,6 @@
         let winnerId = null;
         let aiThinking = false;
         let aiTurnId = 0;
-        let toastTimer = 0;
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
@@ -1374,7 +1348,6 @@
             syncSettingsInputs();
             saveSettings();
             closeDialog(settingsDialogEl);
-                showToast(`Размер поля: ${boardWidth} x ${boardHeight}. Нажми "Старт", чтобы начать.`);
         }
 
         function showStartScreen() {
@@ -1944,7 +1917,6 @@
             }
 
             if (!legalColorsFor(0).includes(colorIndex)) {
-                showToast("Этот цвет выбрать нельзя: он уже твой или принадлежит сопернику.");
                 return;
             }
 
@@ -1992,7 +1964,6 @@
 
             const snapshot = history.pop();
             restoreSnapshot(snapshot);
-            showToast(history.length ? "Откат выполнен. Можно откатиться ещё." : "Откат к началу партии.");
         }
 
         function restartSameField() {
@@ -2004,7 +1975,6 @@
             history = [];
             showGameScreen();
             restoreSnapshot(initialSnapshot);
-            showToast("Партия возвращена к старту на том же поле.");
         }
 
         function startNewGame() {
@@ -2251,15 +2221,6 @@
                 drop.style.setProperty("--delay", `${Math.random() * 520}ms`);
                 effectLayerEl.appendChild(drop);
             }
-        }
-
-        function showToast(message) {
-            window.clearTimeout(toastTimer);
-            toastEl.textContent = message;
-            toastEl.classList.add("visible");
-            toastTimer = window.setTimeout(() => {
-                toastEl.classList.remove("visible");
-            }, 3000);
         }
 
         function registerServiceWorker() {
