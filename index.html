@@ -659,6 +659,10 @@
         }
 
         .color-btn {
+            position: relative;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
             aspect-ratio: 1;
             min-width: 0;
             min-height: 0;
@@ -683,6 +687,157 @@
         .color-btn:disabled {
             filter: grayscale(0.72);
             opacity: 0.38;
+        }
+
+        .color-btn.occupied:disabled {
+            filter: none;
+            opacity: 1;
+        }
+
+        .palette-marker {
+            position: absolute;
+            inset: 12%;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+        }
+
+        .palette-marker span {
+            position: absolute;
+            display: block;
+            background: #ffffff;
+        }
+
+        .human-marker .human-head {
+            top: 7%;
+            left: 50%;
+            width: 26%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+
+        .human-marker .human-body {
+            top: 34%;
+            left: 50%;
+            width: 12%;
+            height: 31%;
+            border-radius: 999px;
+            transform: translateX(-50%);
+        }
+
+        .human-marker .human-arm {
+            top: 43%;
+            width: 31%;
+            height: 10%;
+            border-radius: 999px;
+        }
+
+        .human-marker .human-arm.left {
+            left: 16%;
+            transform: rotate(-28deg);
+            transform-origin: right center;
+        }
+
+        .human-marker .human-arm.right {
+            right: 16%;
+            transform: rotate(28deg);
+            transform-origin: left center;
+        }
+
+        .human-marker .human-leg {
+            bottom: 9%;
+            width: 11%;
+            height: 31%;
+            border-radius: 999px;
+        }
+
+        .human-marker .human-leg.left {
+            left: 39%;
+            transform: rotate(20deg);
+            transform-origin: top center;
+        }
+
+        .human-marker .human-leg.right {
+            right: 39%;
+            transform: rotate(-20deg);
+            transform-origin: top center;
+        }
+
+        .robot-marker {
+            color: #ffffff;
+        }
+
+        .robot-marker .robot-head {
+            top: 7%;
+            left: 22%;
+            width: 56%;
+            height: 35%;
+            border-radius: 12%;
+            background: #ffffff;
+        }
+
+        .robot-marker .robot-eye {
+            top: 19%;
+            width: 9%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: #101528;
+            z-index: 1;
+        }
+
+        .robot-marker .robot-eye.left {
+            left: 37%;
+        }
+
+        .robot-marker .robot-eye.right {
+            right: 37%;
+        }
+
+        .robot-marker .robot-antenna {
+            top: 0;
+            left: 50%;
+            width: 8%;
+            height: 13%;
+            border-radius: 999px;
+            transform: translateX(-50%);
+        }
+
+        .robot-marker .robot-body {
+            top: 48%;
+            left: 28%;
+            width: 44%;
+            height: 32%;
+            border-radius: 10%;
+        }
+
+        .robot-marker .robot-arm {
+            top: 54%;
+            width: 13%;
+            height: 25%;
+            border-radius: 999px;
+        }
+
+        .robot-marker .robot-arm.left {
+            left: 12%;
+        }
+
+        .robot-marker .robot-arm.right {
+            right: 12%;
+        }
+
+        .robot-marker .robot-leg {
+            bottom: 4%;
+            width: 12%;
+            height: 17%;
+            border-radius: 999px;
+        }
+
+        .robot-marker .robot-leg.left {
+            left: 34%;
+        }
+
+        .robot-marker .robot-leg.right {
+            right: 34%;
         }
 
         .rules {
@@ -1942,9 +2097,41 @@
             computerScoreLabel.textContent = `${percents[1]}%`;
         }
 
+        function createPaletteMarker(type) {
+            const marker = document.createElement("span");
+            marker.className = `palette-marker ${type}-marker`;
+            marker.setAttribute("aria-hidden", "true");
+
+            if (type === "human") {
+                marker.innerHTML = `
+                    <span class="human-head"></span>
+                    <span class="human-body"></span>
+                    <span class="human-arm left"></span>
+                    <span class="human-arm right"></span>
+                    <span class="human-leg left"></span>
+                    <span class="human-leg right"></span>
+                `;
+                return marker;
+            }
+
+            marker.innerHTML = `
+                <span class="robot-antenna"></span>
+                <span class="robot-head"></span>
+                <span class="robot-eye left"></span>
+                <span class="robot-eye right"></span>
+                <span class="robot-body"></span>
+                <span class="robot-arm left"></span>
+                <span class="robot-arm right"></span>
+                <span class="robot-leg left"></span>
+                <span class="robot-leg right"></span>
+            `;
+            return marker;
+        }
+
         function renderPalette() {
             const legal = new Set(legalColorsFor(0));
             const ownColor = currentColorOf(0);
+            const computerColor = currentColorOf(1);
             const opponentColors = new Set(opponentCurrentColorsFor(0));
             const fragment = document.createDocumentFragment();
 
@@ -1962,12 +2149,20 @@
                 }
 
                 button.className = "color-btn";
+                if (index === ownColor || index === computerColor) {
+                    button.classList.add("occupied");
+                }
                 button.type = "button";
                 button.style.setProperty("--choice-color", color.value);
                 button.disabled = disabled;
                 button.title = `${color.name}: ${reason}`;
                 button.setAttribute("aria-label", `Выбрать ${color.name}: ${reason}`);
                 button.addEventListener("click", () => handleHumanMove(index));
+                if (index === ownColor) {
+                    button.appendChild(createPaletteMarker("human"));
+                } else if (index === computerColor) {
+                    button.appendChild(createPaletteMarker("robot"));
+                }
                 fragment.appendChild(button);
             });
 
