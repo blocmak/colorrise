@@ -469,8 +469,13 @@
             min-height: 0;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 16px;
-            background: rgba(2, 6, 17, 0.58);
-            box-shadow: var(--shadow);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 44%, rgba(0, 0, 0, 0.22)),
+                rgba(2, 6, 17, 0.68);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.18),
+                inset 0 -10px 22px rgba(0, 0, 0, 0.22),
+                0 18px 48px rgba(0, 0, 0, 0.32);
         }
 
         .score-bar {
@@ -483,7 +488,13 @@
             width: var(--score-width);
             min-width: 0;
             overflow: visible;
-            background: var(--score-color);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08) 38%, rgba(0, 0, 0, 0.22)),
+                var(--score-color);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.32),
+                inset 0 -12px 18px rgba(0, 0, 0, 0.18),
+                0 0 20px rgba(255, 255, 255, 0.12);
             transition: width 220ms ease, background 160ms ease;
         }
 
@@ -495,7 +506,25 @@
             right: 0;
         }
 
-        .score-bar span {
+        .score-center-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 3px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.32),
+                0 0 16px rgba(255, 255, 255, 0.52);
+            transform: translateX(-50%);
+            z-index: 4;
+        }
+
+        .score-label {
+            position: absolute;
+            top: 50%;
+            z-index: 5;
             padding: 0 8px;
             color: #ffffff;
             font-size: clamp(0.8rem, 2.5vw, 1rem);
@@ -503,6 +532,17 @@
             line-height: 1;
             text-shadow: 0 1px 4px rgba(0, 0, 0, 0.72);
             white-space: nowrap;
+            transform: translateY(-50%);
+        }
+
+        .score-label.human {
+            right: calc(50% + 10px);
+            text-align: right;
+        }
+
+        .score-label.computer {
+            left: calc(50% + 10px);
+            text-align: left;
         }
 
         .game-field {
@@ -1113,7 +1153,7 @@
                 <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="menu-title">ColorRise</h1>
                 <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
-                <div class="build-info">Сборка: 2026-06-24 21:50:45 UTC · Версия: colorwars-duel-pwa-v17</div>
+                <div class="build-info">Сборка: 2026-06-24 22:35:29 UTC · Версия: colorwars-duel-pwa-v18</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
@@ -1124,12 +1164,11 @@
 
         <section class="screen game-screen" id="gameScreen" aria-label="Игра ColorRise">
             <div class="score-strip" id="scoreStrip" aria-label="Счёт">
-                <div class="score-bar human" id="humanScoreBar">
-                    <span id="humanScoreLabel">0%</span>
-                </div>
-                <div class="score-bar computer" id="computerScoreBar">
-                    <span id="computerScoreLabel">0%</span>
-                </div>
+                <div class="score-bar human" id="humanScoreBar"></div>
+                <div class="score-bar computer" id="computerScoreBar"></div>
+                <div class="score-center-line" aria-hidden="true"></div>
+                <span class="score-label human" id="humanScoreLabel">0.00%</span>
+                <span class="score-label computer" id="computerScoreLabel">0.00%</span>
             </div>
 
             <section class="game-field" id="gameField" aria-label="Игровая область">
@@ -2058,7 +2097,8 @@
 
         function renderScores() {
             const counts = territoryCounts();
-            const percents = counts.map((count) => Math.round((count / cells.length) * 100));
+            const percents = counts.map((count) => (count / cells.length) * 100);
+            const scoreLabels = percents.map((percent) => `${percent.toFixed(2)}%`);
             const humanColor = currentColorOf(0);
             const computerColor = currentColorOf(1);
             const humanColorValue = humanColor >= 0 ? COLORS[humanColor].value : "#2b3045";
@@ -2066,13 +2106,13 @@
 
             humanScoreBar.style.setProperty("--score-width", `${percents[0]}%`);
             humanScoreBar.style.setProperty("--score-color", humanColorValue);
-            humanScoreBar.setAttribute("aria-label", `Человек захватил ${percents[0]}% поля`);
-            humanScoreLabel.textContent = `${percents[0]}%`;
+            humanScoreBar.setAttribute("aria-label", `Человек захватил ${scoreLabels[0]} поля`);
+            humanScoreLabel.textContent = scoreLabels[0];
 
             computerScoreBar.style.setProperty("--score-width", `${percents[1]}%`);
             computerScoreBar.style.setProperty("--score-color", computerColorValue);
-            computerScoreBar.setAttribute("aria-label", `Компьютер захватил ${percents[1]}% поля`);
-            computerScoreLabel.textContent = `${percents[1]}%`;
+            computerScoreBar.setAttribute("aria-label", `Компьютер захватил ${scoreLabels[1]} поля`);
+            computerScoreLabel.textContent = scoreLabels[1];
         }
 
         function createPaletteMarker(type) {
