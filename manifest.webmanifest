@@ -1,7 +1,7 @@
 {
-    "name": "ColorRise PWA",
+    "name": "ColorRise",
     "short_name": "ColorRise",
-    "description": "PWA-дуэль ColorRise: человек против компьютера за цветные плитки.",
+    "description": "ColorRise: человек против компьютера за цветные плитки.",
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
