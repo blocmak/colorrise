@@ -674,17 +674,17 @@
             border-radius: 18px;
             background: #0d1223;
             box-shadow: var(--shadow);
-            opacity: 0;
             pointer-events: none;
             transform: translateY(8px);
-            transition: opacity 140ms ease, transform 140ms ease;
+            visibility: hidden;
+            transition: transform 140ms ease, visibility 140ms ease;
             z-index: 25;
         }
 
         .game-menu.open .game-dropdown {
-            opacity: 1;
             pointer-events: auto;
             transform: translateY(0);
+            visibility: visible;
         }
 
         .game-dropdown-title {
@@ -1184,7 +1184,7 @@
                 <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="menu-title">ColorRise</h1>
                 <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
-                <div class="build-info">Сборка: 2026-06-26 23:36:19 UTC · Версия: colorwars-duel-pwa-v23</div>
+                <div class="build-info">Сборка: 2026-06-26 23:43:36 UTC · Версия: colorwars-duel-pwa-v24</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
