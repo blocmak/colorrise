@@ -57,7 +57,7 @@
         }
 
         .app {
-            width: min(1180px, 100%);
+            width: 100%;
             margin: 0 auto;
             padding: max(18px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
             min-height: 100dvh;
@@ -119,8 +119,8 @@
 
         .game-screen.active {
             display: grid;
-            grid-template-rows: clamp(36px, 6.5dvh, 56px) minmax(0, 1fr) clamp(60px, 10dvh, 86px);
-            gap: clamp(8px, 1.4dvh, 14px);
+            grid-template-rows: clamp(36px, 6.5dvh, 56px) minmax(0, 1fr) clamp(50px, 7dvh, 64px);
+            gap: clamp(6px, 1.1dvh, 12px);
             min-height: 0;
             height: 100%;
         }
@@ -383,7 +383,7 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.24),
                 inset 0 0 0 1px rgba(255, 255, 255, 0.16),
                 inset 0 -10px 18px rgba(0, 0, 0, 0.14);
-            transition: transform 140ms ease, box-shadow 140ms ease, background 160ms ease;
+            transition: transform 140ms ease, box-shadow 140ms ease, background 500ms ease;
         }
 
         .cell::before,
@@ -523,7 +523,7 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.32),
                 inset 0 -12px 18px rgba(0, 0, 0, 0.18),
                 0 0 20px rgba(255, 255, 255, 0.12);
-            transition: width 220ms ease, background 160ms ease;
+            transition: width 220ms ease, background 500ms ease;
         }
 
         .score-bar.human {
@@ -592,11 +592,11 @@
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
             align-items: stretch;
-            gap: clamp(8px, 2vw, 12px);
+            gap: clamp(6px, 1.5vw, 10px);
             min-height: 0;
-            padding: 6px;
+            padding: 4px;
             border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 18px;
+            border-radius: 16px;
             background: rgba(18, 24, 45, 0.88);
             box-shadow: var(--shadow);
             backdrop-filter: blur(18px);
@@ -615,10 +615,10 @@
         .hamburger-btn {
             display: inline-grid;
             place-items: center;
-            width: clamp(52px, 13vw, 72px);
+            width: clamp(46px, 11vw, 58px);
             height: 100%;
-            min-height: 48px;
-            border-radius: 14px;
+            min-height: 42px;
+            border-radius: 12px;
             background: rgba(255, 255, 255, 0.1);
             transition: background 120ms ease, transform 120ms ease;
         }
@@ -724,7 +724,7 @@
         .palette {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: clamp(4px, 1.1vw, 8px);
+            gap: clamp(3px, 0.8vw, 6px);
             margin: 0;
         }
 
@@ -749,7 +749,7 @@
                 inset 0 0 0 2px rgba(255, 255, 255, 0.2),
                 inset 0 -12px 18px rgba(0, 0, 0, 0.14),
                 0 10px 22px rgba(0, 0, 0, 0.22);
-            transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
+            transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease, background 500ms ease;
         }
 
         .color-btn:hover:not(:disabled),
@@ -1184,7 +1184,7 @@
                 <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="menu-title">ColorRise</h1>
                 <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
-                <div class="build-info">Сборка: 2026-06-25 18:00:00 МСК v21</div>
+                <div class="build-info">Сборка: 2026-06-26 22:54:20 UTC · Версия: colorwars-duel-pwa-v22</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
@@ -1282,6 +1282,7 @@
     <script>
         const DEFAULT_BOARD_WIDTH = 13;
         const DEFAULT_BOARD_HEIGHT = 13;
+        const DEFAULT_SHORT_SIDE = 13;
         const MIN_BOARD_SIZE = 6;
         const MAX_BOARD_SIZE = 24;
         const START_MIN_SEEDS = 2;
@@ -1350,6 +1351,7 @@
 
         let boardWidth = DEFAULT_BOARD_WIDTH;
         let boardHeight = DEFAULT_BOARD_HEIGHT;
+        let customBoardSize = false;
         let cells = [];
         let initialSnapshot = null;
         let history = [];
@@ -1380,6 +1382,50 @@
             return Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE, parsed));
         }
 
+        function clampNumber(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function autoBoardDimensions() {
+            const fieldRect = gameScreenEl.classList.contains("active")
+                ? gameFieldEl.getBoundingClientRect()
+                : null;
+            const viewportWidth = document.documentElement.clientWidth || window.innerWidth || 390;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 720;
+            const availableWidth = fieldRect && fieldRect.width
+                ? fieldRect.width
+                : Math.max(1, viewportWidth - 32);
+            const scoreHeight = clampNumber(viewportHeight * 0.065, 36, 56);
+            const paletteHeight = clampNumber(viewportHeight * 0.07, 50, 64);
+            const gaps = clampNumber(viewportHeight * 0.011, 6, 12) * 2;
+            const availableHeight = fieldRect && fieldRect.height
+                ? fieldRect.height
+                : Math.max(1, viewportHeight - scoreHeight - paletteHeight - gaps - 44);
+            const ratio = availableWidth / availableHeight;
+
+            if (ratio >= 1) {
+                return {
+                    boardWidth: clampDimension(Math.round(DEFAULT_SHORT_SIDE * ratio), DEFAULT_BOARD_WIDTH),
+                    boardHeight: DEFAULT_SHORT_SIDE
+                };
+            }
+
+            return {
+                boardWidth: DEFAULT_SHORT_SIDE,
+                boardHeight: clampDimension(Math.round(DEFAULT_SHORT_SIDE / ratio), DEFAULT_BOARD_HEIGHT)
+            };
+        }
+
+        function applyAutoBoardDimensions() {
+            if (customBoardSize) {
+                return;
+            }
+            const dimensions = autoBoardDimensions();
+            boardWidth = dimensions.boardWidth;
+            boardHeight = dimensions.boardHeight;
+            syncSettingsInputs();
+        }
+
         function boardArea() {
             return boardWidth * boardHeight;
         }
@@ -1397,9 +1443,11 @@
                 const saved = JSON.parse(raw);
                 boardWidth = clampDimension(saved.boardWidth, DEFAULT_BOARD_WIDTH);
                 boardHeight = clampDimension(saved.boardHeight, DEFAULT_BOARD_HEIGHT);
+                customBoardSize = true;
             } catch (error) {
                 boardWidth = DEFAULT_BOARD_WIDTH;
                 boardHeight = DEFAULT_BOARD_HEIGHT;
+                customBoardSize = false;
             }
         }
 
@@ -1415,6 +1463,7 @@
         function saveSettingsFromInputs() {
             boardWidth = clampDimension(boardWidthInput.value, DEFAULT_BOARD_WIDTH);
             boardHeight = clampDimension(boardHeightInput.value, DEFAULT_BOARD_HEIGHT);
+            customBoardSize = true;
             syncSettingsInputs();
             saveSettings();
             closeDialog(settingsDialogEl);
@@ -1966,19 +2015,29 @@
 
         function finishIfNeeded() {
             const counts = territoryCounts();
+            const occupied = counts[0] + counts[1];
             const leader = counts[0] > counts[1] ? 0 : 1;
-            if (counts[leader] < winThreshold()) {
-                return false;
+
+            if (counts[leader] >= winThreshold()) {
+                gameOver = true;
+                winnerId = leader;
+                currentPlayer = leader;
+                saveGame();
+                render();
+                showEndgameEffect(winnerId);
+                return true;
             }
 
-            gameOver = true;
-            winnerId = leader;
-            currentPlayer = leader;
-            saveGame();
-            render();
+            if (occupied === cells.length && counts[0] === counts[1]) {
+                gameOver = true;
+                winnerId = null;
+                saveGame();
+                render();
+                showEndgameEffect(winnerId);
+                return true;
+            }
 
-            showEndgameEffect(winnerId);
-            return true;
+            return false;
         }
 
         function handleHumanMove(colorIndex) {
@@ -2051,6 +2110,7 @@
             aiTurnId += 1;
             closeGameMenu();
             showGameScreen();
+            applyAutoBoardDimensions();
             cells = createBoard();
             currentPlayer = 0;
             moveNumber = 1;
@@ -2104,13 +2164,35 @@
         function renderBoard() {
             boardEl.style.gridTemplateColumns = `repeat(${boardWidth}, 1fr)`;
             boardWrapEl.style.setProperty("--board-ratio", `${boardWidth} / ${boardHeight}`);
-            const fragment = document.createDocumentFragment();
+            const shouldRebuild = boardEl.children.length !== cells.length
+                || boardEl.dataset.width !== String(boardWidth)
+                || boardEl.dataset.height !== String(boardHeight);
 
-            cells.forEach((cell) => {
-                const tile = document.createElement("button");
-                tile.className = "cell";
-                tile.type = "button";
-                tile.setAttribute("role", "gridcell");
+            if (shouldRebuild) {
+                const fragment = document.createDocumentFragment();
+                cells.forEach((_, cellIndex) => {
+                    const tile = document.createElement("button");
+                    tile.className = "cell";
+                    tile.type = "button";
+                    tile.setAttribute("role", "gridcell");
+                    tile.addEventListener("click", () => {
+                        const cell = cells[cellIndex];
+                        if (cell) {
+                            handleHumanMove(cell.color);
+                        }
+                    });
+                    fragment.appendChild(tile);
+                });
+                boardEl.replaceChildren(fragment);
+                boardEl.dataset.width = String(boardWidth);
+                boardEl.dataset.height = String(boardHeight);
+            }
+
+            cells.forEach((cell, cellIndex) => {
+                const tile = boardEl.children[cellIndex];
+                if (!tile) {
+                    return;
+                }
                 tile.dataset.owner = String(cell.owner);
                 tile.dataset.frontier = String(isFrontierCell(cell));
                 tile.style.setProperty("--cell-color", COLORS[cell.color].value);
@@ -2118,11 +2200,7 @@
                 const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
                 tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
                 tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
-                tile.addEventListener("click", () => handleHumanMove(cell.color));
-                fragment.appendChild(tile);
             });
-
-            boardEl.replaceChildren(fragment);
             updateBoardSize();
         }
 
@@ -2249,6 +2327,13 @@
                 return;
             }
 
+            if (playerId === null) {
+                endgameTitleEl.textContent = "Ничья!";
+                endgameTextEl.textContent = "Победила дружба.";
+                endgameEffectEl.classList.add("visible", "draw");
+                return;
+            }
+
             endgameTitleEl.textContent = "Поражение";
             endgameTextEl.textContent = "Компьютер первым забрал больше половины поля. Можно откатить ход и попробовать иначе.";
             createDefeatRain();
@@ -2319,6 +2404,7 @@
 
         function init() {
             loadSettings();
+            applyAutoBoardDimensions();
             syncSettingsInputs();
             showStartScreen();
 
