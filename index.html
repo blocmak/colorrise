@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#101528">
-    <meta name="description" content="ColorWars Duel: PWA-игра про захват цветных плиток.">
+    <meta name="description" content="ColorRise: PWA-игра про захват цветных плиток.">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
-    <title>ColorWars Duel · PWA</title>
+    <title>ColorRise</title>
     <style>
         :root {
             color-scheme: dark;
@@ -31,6 +31,7 @@
         html,
         body {
             min-height: 100%;
+            height: 100%;
         }
 
         body {
@@ -56,9 +57,11 @@
         }
 
         .app {
-            width: min(1180px, 100%);
+            width: 100%;
             margin: 0 auto;
             padding: max(18px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+            min-height: 100dvh;
+            height: 100dvh;
         }
 
         .hero {
@@ -114,6 +117,14 @@
             display: block;
         }
 
+        .game-screen.active {
+            display: grid;
+            grid-template-rows: clamp(36px, 6.5dvh, 56px) minmax(0, 1fr) clamp(50px, 7dvh, 64px);
+            gap: clamp(6px, 1.1dvh, 12px);
+            min-height: 0;
+            height: 100%;
+        }
+
         .start-screen {
             min-height: min(760px, calc(100vh - 40px));
             display: none;
@@ -143,6 +154,14 @@
             margin: 0;
             color: var(--muted);
             line-height: 1.5;
+        }
+
+        .build-info {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 750;
+            letter-spacing: 0.04em;
         }
 
         .main-menu {
@@ -353,6 +372,7 @@
 
         .cell {
             position: relative;
+            overflow: hidden;
             min-width: 0;
             padding: 0;
             border: 0;
@@ -360,9 +380,36 @@
             appearance: none;
             background: var(--cell-color);
             box-shadow:
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-                inset 0 -10px 18px rgba(0, 0, 0, 0.15);
-            transition: transform 140ms ease, box-shadow 140ms ease, background 160ms ease;
+                inset 0 1px 0 rgba(255, 255, 255, 0.24),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+                inset 0 -10px 18px rgba(0, 0, 0, 0.14);
+            transition: transform 140ms ease, box-shadow 140ms ease, background 500ms ease;
+        }
+
+        .cell::before,
+        .color-btn::before {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background:
+                radial-gradient(ellipse at 30% 18%, rgba(255, 255, 255, 0.29), rgba(255, 255, 255, 0.13) 24%, rgba(255, 255, 255, 0) 55%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.04) 38%, rgba(255, 255, 255, 0) 62%);
+            content: "";
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .cell::after,
+        .color-btn::after {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0) 34%),
+                linear-gradient(180deg, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.12));
+            content: "";
+            pointer-events: none;
+            z-index: 1;
         }
 
         .side-card {
@@ -444,6 +491,229 @@
             background: var(--current-color);
         }
 
+        .score-strip {
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 44%, rgba(0, 0, 0, 0.22)),
+                rgba(2, 6, 17, 0.68);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.18),
+                inset 0 -10px 22px rgba(0, 0, 0, 0.22),
+                0 18px 48px rgba(0, 0, 0, 0.32);
+        }
+
+        .score-bar {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: var(--score-width);
+            min-width: 0;
+            overflow: visible;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08) 38%, rgba(0, 0, 0, 0.22)),
+                var(--score-color);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.32),
+                inset 0 -12px 18px rgba(0, 0, 0, 0.18),
+                0 0 20px rgba(255, 255, 255, 0.12);
+            transition: width 220ms ease, background 500ms ease;
+        }
+
+        .score-bar.human {
+            left: 0;
+        }
+
+        .score-bar.computer {
+            right: 0;
+        }
+
+        .score-center-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 3px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.32),
+                0 0 16px rgba(255, 255, 255, 0.52);
+            transform: translateX(-50%);
+            z-index: 4;
+        }
+
+        .score-label {
+            position: absolute;
+            top: 50%;
+            z-index: 5;
+            padding: 0 8px;
+            color: #ffffff;
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+            font-weight: 950;
+            line-height: 1;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.72);
+            white-space: nowrap;
+            transform: translateY(-50%);
+        }
+
+        .score-label.human {
+            right: calc(50% + 10px);
+            text-align: right;
+        }
+
+        .score-label.computer {
+            left: calc(50% + 10px);
+            text-align: left;
+        }
+
+        .game-field {
+            display: grid;
+            place-items: center;
+            min-height: 0;
+        }
+
+        .game-field .board-wrap {
+            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            min-height: 0;
+            margin: 0 auto;
+        }
+
+        .bottom-bar {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: stretch;
+            gap: clamp(6px, 1.5vw, 10px);
+            min-height: 0;
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            background: rgba(18, 24, 45, 0.88);
+            box-shadow: var(--shadow);
+            /* backdrop-filter: blur(18px); */
+        }
+
+        .bottom-bar .palette {
+            align-items: stretch;
+            height: 100%;
+        }
+
+        .game-menu {
+            position: relative;
+            display: grid;
+        }
+
+        .hamburger-btn {
+            display: inline-grid;
+            place-items: center;
+            width: clamp(46px, 11vw, 58px);
+            height: 100%;
+            min-height: 42px;
+            border-radius: 12px;
+            background: #263049;
+            transition: background 120ms ease, transform 120ms ease;
+        }
+
+        .hamburger-btn:hover,
+        .hamburger-btn:focus-visible {
+            background: #34405f;
+            outline: none;
+        }
+
+        .hamburger-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .hamburger-icon,
+        .hamburger-icon::before,
+        .hamburger-icon::after {
+            display: block;
+            width: 24px;
+            height: 3px;
+            border-radius: 999px;
+            background: currentColor;
+            content: "";
+        }
+
+        .hamburger-icon {
+            position: relative;
+        }
+
+        .hamburger-icon::before,
+        .hamburger-icon::after {
+            position: absolute;
+            left: 0;
+        }
+
+        .hamburger-icon::before {
+            top: -8px;
+        }
+
+        .hamburger-icon::after {
+            top: 8px;
+        }
+
+        .game-dropdown {
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 10px);
+            display: grid;
+            gap: 6px;
+            width: min(220px, calc(100vw - 32px));
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 18px;
+            background: #0d1223;
+            box-shadow: var(--shadow);
+            pointer-events: none;
+            transform: translateY(8px);
+            visibility: hidden;
+            transition: transform 140ms ease, visibility 140ms ease;
+            z-index: 25;
+        }
+
+        .game-menu.open .game-dropdown {
+            pointer-events: auto;
+            transform: translateY(0);
+            visibility: visible;
+        }
+
+        .game-dropdown-title {
+            padding: 8px 10px 10px;
+            color: var(--accent);
+            font-weight: 950;
+            letter-spacing: 0.14em;
+            text-align: center;
+        }
+
+        .dropdown-item {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #252e46;
+            font-weight: 850;
+            text-align: left;
+        }
+
+        .dropdown-item:hover:not(:disabled),
+        .dropdown-item:focus-visible:not(:disabled) {
+            background: #34405f;
+            outline: none;
+        }
+
+        .dropdown-item:disabled {
+            opacity: 0.42;
+        }
+
         .palette-panel {
             margin-top: 8px;
             padding: 6px;
@@ -453,21 +723,33 @@
 
         .palette {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: clamp(4px, 1.1vw, 8px);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: clamp(3px, 0.8vw, 6px);
             margin: 0;
         }
 
+        .bottom-bar .color-btn {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: auto;
+        }
+
         .color-btn {
+            position: relative;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
             aspect-ratio: 1;
             min-width: 0;
             min-height: 0;
             border-radius: clamp(8px, 1.6vw, 14px);
             background: var(--choice-color);
             box-shadow:
-                inset 0 0 0 2px rgba(255, 255, 255, 0.32),
+                inset 0 1px 0 rgba(255, 255, 255, 0.26),
+                inset 0 0 0 2px rgba(255, 255, 255, 0.2),
+                inset 0 -12px 18px rgba(0, 0, 0, 0.14),
                 0 10px 22px rgba(0, 0, 0, 0.22);
-            transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
+            transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease, background 500ms ease;
         }
 
         .color-btn:hover:not(:disabled),
@@ -483,6 +765,158 @@
         .color-btn:disabled {
             filter: grayscale(0.72);
             opacity: 0.38;
+        }
+
+        .color-btn.occupied:disabled {
+            filter: none;
+            opacity: 1;
+        }
+
+        .palette-marker {
+            position: absolute;
+            inset: 12%;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+            z-index: 2;
+        }
+
+        .palette-marker span {
+            position: absolute;
+            display: block;
+            background: #ffffff;
+        }
+
+        .human-marker .human-head {
+            top: 5%;
+            left: 50%;
+            width: 20%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+
+        .human-marker .human-body {
+            top: 36%;
+            left: 50%;
+            width: 20%;
+            height: 35%;
+            border-radius: 999px 999px 45% 45%;
+            transform: translateX(-50%);
+        }
+
+        .human-marker .human-arm {
+            top: 44%;
+            width: 20%;
+            height: 15%;
+            border-radius: 999px;
+        }
+
+        .human-marker .human-arm.left {
+            left: 25%;
+            transform: rotate(30deg);
+            transform-origin: right center;
+        }
+
+        .human-marker .human-arm.right {
+            right: 25%;
+            transform: rotate(330deg);
+            transform-origin: left center;
+        }
+
+        .human-marker .human-leg {
+            bottom: 0%;
+            width: 8%;
+            height: 33%;
+            border-radius: 999px;
+        }
+
+        .human-marker .human-leg.left {
+            left: 40%;
+            transform: rotate(0deg);
+            transform-origin: top center;
+        }
+
+        .human-marker .human-leg.right {
+            right: 40%;
+            transform: rotate(0deg);
+            transform-origin: top center;
+        }
+
+        .robot-marker {
+            color: #ffffff;
+        }
+
+        .robot-marker .robot-head {
+            top: 7%;
+            left: 22%;
+            width: 56%;
+            height: 35%;
+            border-radius: 12%;
+            background: #ffffff;
+        }
+
+        .robot-marker .robot-eye {
+            top: 19%;
+            width: 9%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: #101528;
+            z-index: 1;
+        }
+
+        .robot-marker .robot-eye.left {
+            left: 37%;
+        }
+
+        .robot-marker .robot-eye.right {
+            right: 37%;
+        }
+
+        .robot-marker .robot-antenna {
+            top: 0;
+            left: 50%;
+            width: 8%;
+            height: 13%;
+            border-radius: 999px;
+            transform: translateX(-50%);
+        }
+
+        .robot-marker .robot-body {
+            top: 48%;
+            left: 28%;
+            width: 44%;
+            height: 32%;
+            border-radius: 10%;
+        }
+
+        .robot-marker .robot-arm {
+            top: 54%;
+            width: 13%;
+            height: 25%;
+            border-radius: 999px;
+        }
+
+        .robot-marker .robot-arm.left {
+            left: 12%;
+        }
+
+        .robot-marker .robot-arm.right {
+            right: 12%;
+        }
+
+        .robot-marker .robot-leg {
+            bottom: 4%;
+            width: 12%;
+            height: 17%;
+            border-radius: 999px;
+        }
+
+        .robot-marker .robot-leg.left {
+            left: 34%;
+        }
+
+        .robot-marker .robot-leg.right {
+            right: 34%;
         }
 
         .rules {
@@ -529,29 +963,6 @@
             font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-        }
-
-        .toast {
-            position: fixed;
-            right: 16px;
-            bottom: 16px;
-            max-width: min(440px, calc(100vw - 32px));
-            padding: 14px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 18px;
-            background: rgba(15, 20, 37, 0.94);
-            box-shadow: var(--shadow);
-            color: var(--text);
-            transform: translateY(18px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 180ms ease, transform 180ms ease;
-            z-index: 20;
-        }
-
-        .toast.visible {
-            transform: translateY(0);
-            opacity: 1;
         }
 
         .endgame-effect {
@@ -773,6 +1184,7 @@
                 <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="menu-title">ColorRise</h1>
                 <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
+                <div class="build-info">Сборка: 2026-06-26 23:43:36 UTC · Версия: colorwars-duel-pwa-v24</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
@@ -781,73 +1193,35 @@
             </div>
         </section>
 
-        <section class="screen" id="gameScreen" aria-label="Игра ColorWars">
-        <section class="hero" aria-labelledby="game-title">
-            <div>
-                <p class="eyebrow">PWA duel prototype</p>
-                <h1 id="game-title">ColorWars</h1>
-                <p>
-                    Два участника, семь цветов и поле из квадратных плиток. Меняй цвет своей территории,
-                    присоединяй соседние плитки и окружай области, чтобы первым забрать больше половины поля.
-                </p>
+        <section class="screen game-screen" id="gameScreen" aria-label="Игра ColorRise">
+            <div class="score-strip" id="scoreStrip" aria-label="Счёт">
+                <div class="score-bar human" id="humanScoreBar"></div>
+                <div class="score-bar computer" id="computerScoreBar"></div>
+                <div class="score-center-line" aria-hidden="true"></div>
+                <span class="score-label human" id="humanScoreLabel">0.00%</span>
+                <span class="score-label computer" id="computerScoreLabel">0.00%</span>
             </div>
-            <div class="install-hint" id="installHint">Работает офлайн после первого запуска</div>
-        </section>
 
-        <section class="layout" aria-label="Игровая область">
-            <div class="board-card">
-                <div class="board-toolbar">
-                    <div class="status" aria-live="polite">
-                        <strong id="statusTitle">Твой ход</strong>
-                        <span id="statusText">Выбери цвет, отличный от своего и от цвета компьютера.</span>
-                    </div>
-                    <div class="actions">
-                        <button class="action-btn" id="backToMenuButton" type="button">Меню</button>
-                        <button class="action-btn" id="undoButton" type="button">Откат</button>
-                        <button class="action-btn" id="restartButton" type="button">Сначала на этом поле</button>
-                        <button class="action-btn primary" id="newGameButton" type="button">Новое поле</button>
-                    </div>
-                </div>
+            <section class="game-field" id="gameField" aria-label="Игровая область">
                 <div class="board-wrap" id="boardWrap">
-                    <div class="board" id="board" role="grid" aria-label="Поле ColorWars"></div>
+                    <div class="board" id="board" role="grid" aria-label="Поле ColorRise"></div>
                 </div>
-                <div class="palette-panel" aria-label="Выбор цвета">
-                    <div class="palette" id="palette" aria-label="Доступные цвета"></div>
-                </div>
-            </div>
+            </section>
 
-            <aside class="side-card" aria-label="Панель игры">
-                <div class="panel-title">
-                    <h2>Матч</h2>
-                    <span class="round-pill" id="turnInfo">Ход 1</span>
-                </div>
-
-                <div class="score-list" id="scoreList"></div>
-
-                <div class="rules">
-                    <div><strong>Цель:</strong> первым захватить больше 50% поля.</div>
-                    <div><strong>Ход:</strong> выбери цвет снизу или тапни плитку нужного цвета на поле.</div>
-                    <div><strong>Ограничение:</strong> нельзя выбрать свой текущий цвет или текущий цвет соперника.</div>
-                    <div><strong>Захват:</strong> все твои плитки перекрашиваются, а соседние плитки такого же цвета становятся твоими.</div>
-                    <div><strong>Окружение:</strong> замкнутая область захватывается целиком, даже если часть границы проходит по краю поля.</div>
-                </div>
-
-                <div class="meta" aria-label="Статистика матча">
-                    <div class="meta-item">
-                        <strong id="historyValue">0</strong>
-                        <span>Откатов</span>
-                    </div>
-                    <div class="meta-item">
-                        <strong id="targetValue">85</strong>
-                        <span>Плиток для 50%</span>
-                    </div>
-                    <div class="meta-item">
-                        <strong id="freeValue">0</strong>
-                        <span>Свободно</span>
+            <footer class="bottom-bar" aria-label="Управление игрой">
+                <div class="palette" id="palette" aria-label="Доступные цвета"></div>
+                <div class="game-menu" id="gameMenu">
+                    <button class="hamburger-btn" id="gameMenuButton" type="button" aria-label="Открыть меню" aria-controls="gameDropdown" aria-expanded="false">
+                        <span class="hamburger-icon" aria-hidden="true"></span>
+                    </button>
+                    <div class="game-dropdown" id="gameDropdown" role="menu" aria-label="Меню игры">
+                        <div class="game-dropdown-title">COLORRISE</div>
+                        <button class="dropdown-item" id="restartButton" type="button" role="menuitem">Начать сначала</button>
+                        <button class="dropdown-item" id="newGameButton" type="button" role="menuitem">Новая игра</button>
+                        <button class="dropdown-item" id="backToMenuButton" type="button" role="menuitem">Меню</button>
                     </div>
                 </div>
-            </aside>
-        </section>
+            </footer>
         </section>
     </main>
 
@@ -858,13 +1232,13 @@
             <div class="settings-grid">
                 <label class="settings-field" for="boardWidthInput">
                     Количество плиток по горизонтали
-                    <span>Минимум 6, максимум 24.</span>
-                    <input id="boardWidthInput" type="number" min="6" max="24" step="1" inputmode="numeric">
+                    <span>Минимум 6.</span>
+                    <input id="boardWidthInput" type="number" min="6" step="1" inputmode="numeric">
                 </label>
                 <label class="settings-field" for="boardHeightInput">
                     Количество плиток по вертикали
-                    <span>Минимум 6, максимум 24.</span>
-                    <input id="boardHeightInput" type="number" min="6" max="24" step="1" inputmode="numeric">
+                    <span>Минимум 6.</span>
+                    <input id="boardHeightInput" type="number" min="6" step="1" inputmode="numeric">
                 </label>
             </div>
             <div class="dialog-actions">
@@ -892,7 +1266,6 @@
         </div>
     </div>
 
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="endgame-effect" id="endgameEffect" role="status" aria-live="assertive">
         <div class="effect-layer" id="effectLayer" aria-hidden="true"></div>
         <div class="endgame-card">
@@ -909,8 +1282,8 @@
     <script>
         const DEFAULT_BOARD_WIDTH = 13;
         const DEFAULT_BOARD_HEIGHT = 13;
+        const TARGET_TILE_SIZE = 30;
         const MIN_BOARD_SIZE = 6;
-        const MAX_BOARD_SIZE = 24;
         const START_MIN_SEEDS = 2;
         const START_MAX_SEEDS = 6;
         const STORAGE_KEY = "colorwars-duel-state-v4";
@@ -955,19 +1328,17 @@
         const rulesCloseButton = document.getElementById("rulesCloseButton");
         const boardEl = document.getElementById("board");
         const boardWrapEl = document.getElementById("boardWrap");
+        const gameFieldEl = document.getElementById("gameField");
         const paletteEl = document.getElementById("palette");
-        const scoreListEl = document.getElementById("scoreList");
-        const turnInfoEl = document.getElementById("turnInfo");
-        const statusTitleEl = document.getElementById("statusTitle");
-        const statusTextEl = document.getElementById("statusText");
+        const humanScoreBar = document.getElementById("humanScoreBar");
+        const computerScoreBar = document.getElementById("computerScoreBar");
+        const humanScoreLabel = document.getElementById("humanScoreLabel");
+        const computerScoreLabel = document.getElementById("computerScoreLabel");
+        const gameMenuEl = document.getElementById("gameMenu");
+        const gameMenuButton = document.getElementById("gameMenuButton");
         const backToMenuButton = document.getElementById("backToMenuButton");
-        const undoButton = document.getElementById("undoButton");
         const restartButton = document.getElementById("restartButton");
         const newGameButton = document.getElementById("newGameButton");
-        const historyValueEl = document.getElementById("historyValue");
-        const targetValueEl = document.getElementById("targetValue");
-        const freeValueEl = document.getElementById("freeValue");
-        const toastEl = document.getElementById("toast");
         const endgameEffectEl = document.getElementById("endgameEffect");
         const effectLayerEl = document.getElementById("effectLayer");
         const endgameTitleEl = document.getElementById("endgameTitle");
@@ -979,6 +1350,7 @@
 
         let boardWidth = DEFAULT_BOARD_WIDTH;
         let boardHeight = DEFAULT_BOARD_HEIGHT;
+        let customBoardSize = false;
         let cells = [];
         let initialSnapshot = null;
         let history = [];
@@ -987,7 +1359,7 @@
         let gameOver = false;
         let winnerId = null;
         let aiThinking = false;
-        let toastTimer = 0;
+        let aiTurnId = 0;
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
@@ -1006,7 +1378,42 @@
             if (!Number.isFinite(parsed)) {
                 return fallback;
             }
-            return Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE, parsed));
+            return Math.max(MIN_BOARD_SIZE, parsed);
+        }
+
+        function clampNumber(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function autoBoardDimensions() {
+            const fieldRect = gameScreenEl.classList.contains("active")
+                ? gameFieldEl.getBoundingClientRect()
+                : null;
+            const viewportWidth = document.documentElement.clientWidth || window.innerWidth || 390;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 720;
+            const availableWidth = fieldRect && fieldRect.width
+                ? fieldRect.width
+                : Math.max(1, viewportWidth - 32);
+            const scoreHeight = clampNumber(viewportHeight * 0.065, 36, 56);
+            const paletteHeight = clampNumber(viewportHeight * 0.07, 50, 64);
+            const gaps = clampNumber(viewportHeight * 0.011, 6, 12) * 2;
+            const availableHeight = fieldRect && fieldRect.height
+                ? fieldRect.height
+                : Math.max(1, viewportHeight - scoreHeight - paletteHeight - gaps - 44);
+            return {
+                boardWidth: clampDimension(Math.round(availableWidth / TARGET_TILE_SIZE), DEFAULT_BOARD_WIDTH),
+                boardHeight: clampDimension(Math.round(availableHeight / TARGET_TILE_SIZE), DEFAULT_BOARD_HEIGHT)
+            };
+        }
+
+        function applyAutoBoardDimensions() {
+            if (customBoardSize) {
+                return;
+            }
+            const dimensions = autoBoardDimensions();
+            boardWidth = dimensions.boardWidth;
+            boardHeight = dimensions.boardHeight;
+            syncSettingsInputs();
         }
 
         function boardArea() {
@@ -1026,9 +1433,11 @@
                 const saved = JSON.parse(raw);
                 boardWidth = clampDimension(saved.boardWidth, DEFAULT_BOARD_WIDTH);
                 boardHeight = clampDimension(saved.boardHeight, DEFAULT_BOARD_HEIGHT);
+                customBoardSize = true;
             } catch (error) {
                 boardWidth = DEFAULT_BOARD_WIDTH;
                 boardHeight = DEFAULT_BOARD_HEIGHT;
+                customBoardSize = false;
             }
         }
 
@@ -1044,13 +1453,16 @@
         function saveSettingsFromInputs() {
             boardWidth = clampDimension(boardWidthInput.value, DEFAULT_BOARD_WIDTH);
             boardHeight = clampDimension(boardHeightInput.value, DEFAULT_BOARD_HEIGHT);
+            customBoardSize = true;
             syncSettingsInputs();
             saveSettings();
             closeDialog(settingsDialogEl);
-            showToast(`Размер поля: ${boardWidth} x ${boardHeight}. Нажми "Старт", чтобы начать.`);
         }
 
         function showStartScreen() {
+            aiTurnId += 1;
+            aiThinking = false;
+            closeGameMenu();
             clearEndgameEffect();
             gameScreenEl.classList.remove("active");
             startScreenEl.classList.add("active");
@@ -1059,6 +1471,7 @@
         function showGameScreen() {
             startScreenEl.classList.remove("active");
             gameScreenEl.classList.add("active");
+            window.requestAnimationFrame(updateBoardSize);
         }
 
         function openDialog(dialogEl) {
@@ -1067,6 +1480,16 @@
 
         function closeDialog(dialogEl) {
             dialogEl.classList.remove("visible");
+        }
+
+        function closeGameMenu() {
+            gameMenuEl.classList.remove("open");
+            gameMenuButton.setAttribute("aria-expanded", "false");
+        }
+
+        function toggleGameMenu() {
+            const isOpen = gameMenuEl.classList.toggle("open");
+            gameMenuButton.setAttribute("aria-expanded", String(isOpen));
         }
 
         function indexOf(x, y) {
@@ -1342,12 +1765,22 @@
             return playerId === 0 ? 1 : 0;
         }
 
+        function opponentCurrentColorsFor(playerId, source = cells) {
+            return PLAYERS
+                .filter((player) => player.id !== playerId)
+                .map((player) => currentColorOf(player.id, source))
+                .filter((colorIndex) => colorIndex >= 0);
+        }
+
         function legalColorsFor(playerId, source = cells) {
             const ownColor = currentColorOf(playerId, source);
-            const opponentColor = currentColorOf(opponentOf(playerId), source);
+            const forbiddenColors = new Set([
+                ownColor,
+                ...opponentCurrentColorsFor(playerId, source)
+            ]);
             return COLORS
                 .map((_, index) => index)
-                .filter((index) => index !== ownColor && index !== opponentColor);
+                .filter((index) => !forbiddenColors.has(index));
         }
 
         function applyFloodCapture(playerId, colorIndex, source) {
@@ -1378,13 +1811,12 @@
                     }
 
                     visited.add(key);
-                    if (neighbor.owner !== playerId) {
-                        if (neighbor.owner === opponentOf(playerId)) {
-                            stolenByColor += 1;
-                        }
+                    if (neighbor.owner === -1) {
                         capturedByColor += 1;
                         neighbor.owner = playerId;
                         neighbor.color = colorIndex;
+                    } else if (neighbor.owner >= 0) {
+                        return;
                     }
                     queue.push([nx, ny]);
                 });
@@ -1573,19 +2005,29 @@
 
         function finishIfNeeded() {
             const counts = territoryCounts();
+            const occupied = counts[0] + counts[1];
             const leader = counts[0] > counts[1] ? 0 : 1;
-            if (counts[leader] < winThreshold()) {
-                return false;
+
+            if (counts[leader] >= winThreshold()) {
+                gameOver = true;
+                winnerId = leader;
+                currentPlayer = leader;
+                saveGame();
+                render();
+                showEndgameEffect(winnerId);
+                return true;
             }
 
-            gameOver = true;
-            winnerId = leader;
-            currentPlayer = leader;
-            saveGame();
-            render();
+            if (occupied === cells.length && counts[0] === counts[1]) {
+                gameOver = true;
+                winnerId = null;
+                saveGame();
+                render();
+                showEndgameEffect(winnerId);
+                return true;
+            }
 
-            showEndgameEffect(winnerId);
-            return true;
+            return false;
         }
 
         function handleHumanMove(colorIndex) {
@@ -1594,7 +2036,6 @@
             }
 
             if (!legalColorsFor(0).includes(colorIndex)) {
-                showToast("Этот цвет выбрать нельзя: он уже твой или принадлежит компьютеру.");
                 return;
             }
 
@@ -1611,9 +2052,19 @@
         }
 
         async function runComputerTurn() {
+            const turnId = aiTurnId + 1;
+            aiTurnId = turnId;
             aiThinking = true;
             render();
             await wait(420);
+
+            if (turnId !== aiTurnId || gameOver || currentPlayer !== 1) {
+                if (turnId === aiTurnId) {
+                    aiThinking = false;
+                    render();
+                }
+                return;
+            }
 
             const colorIndex = chooseComputerColor();
             applyMove(1, colorIndex);
@@ -1632,21 +2083,24 @@
 
             const snapshot = history.pop();
             restoreSnapshot(snapshot);
-            showToast(history.length ? "Откат выполнен. Можно откатиться ещё." : "Откат к началу партии.");
         }
 
         function restartSameField() {
             if (!initialSnapshot) {
                 return;
             }
+            aiTurnId += 1;
+            closeGameMenu();
             history = [];
             showGameScreen();
             restoreSnapshot(initialSnapshot);
-            showToast("Партия возвращена к старту на том же поле.");
         }
 
         function startNewGame() {
+            aiTurnId += 1;
+            closeGameMenu();
             showGameScreen();
+            applyAutoBoardDimensions();
             cells = createBoard();
             currentPlayer = 0;
             moveNumber = 1;
@@ -1658,7 +2112,6 @@
             clearEndgameEffect();
             saveGame();
             render();
-            showToast("Новое поле готово. Первый ход за человеком.");
         }
 
         function wait(ms) {
@@ -1675,16 +2128,61 @@
             });
         }
 
+        function updateBoardSize() {
+            if (!gameScreenEl.classList.contains("active")) {
+                return;
+            }
+
+            const fieldRect = gameFieldEl.getBoundingClientRect();
+            if (!fieldRect.width || !fieldRect.height) {
+                return;
+            }
+
+            const boardRatio = boardWidth / boardHeight;
+            let width = fieldRect.width;
+            let height = width / boardRatio;
+
+            if (height > fieldRect.height) {
+                height = fieldRect.height;
+                width = height * boardRatio;
+            }
+
+            boardWrapEl.style.width = `${Math.floor(width)}px`;
+            boardWrapEl.style.height = `${Math.floor(height)}px`;
+        }
+
         function renderBoard() {
             boardEl.style.gridTemplateColumns = `repeat(${boardWidth}, 1fr)`;
             boardWrapEl.style.setProperty("--board-ratio", `${boardWidth} / ${boardHeight}`);
-            const fragment = document.createDocumentFragment();
+            const shouldRebuild = boardEl.children.length !== cells.length
+                || boardEl.dataset.width !== String(boardWidth)
+                || boardEl.dataset.height !== String(boardHeight);
 
-            cells.forEach((cell) => {
-                const tile = document.createElement("button");
-                tile.className = "cell";
-                tile.type = "button";
-                tile.setAttribute("role", "gridcell");
+            if (shouldRebuild) {
+                const fragment = document.createDocumentFragment();
+                cells.forEach((_, cellIndex) => {
+                    const tile = document.createElement("button");
+                    tile.className = "cell";
+                    tile.type = "button";
+                    tile.setAttribute("role", "gridcell");
+                    tile.addEventListener("click", () => {
+                        const cell = cells[cellIndex];
+                        if (cell) {
+                            handleHumanMove(cell.color);
+                        }
+                    });
+                    fragment.appendChild(tile);
+                });
+                boardEl.replaceChildren(fragment);
+                boardEl.dataset.width = String(boardWidth);
+                boardEl.dataset.height = String(boardHeight);
+            }
+
+            cells.forEach((cell, cellIndex) => {
+                const tile = boardEl.children[cellIndex];
+                if (!tile) {
+                    return;
+                }
                 tile.dataset.owner = String(cell.owner);
                 tile.dataset.frontier = String(isFrontierCell(cell));
                 tile.style.setProperty("--cell-color", COLORS[cell.color].value);
@@ -1692,47 +2190,66 @@
                 const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
                 tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
                 tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
-                tile.addEventListener("click", () => handleHumanMove(cell.color));
-                fragment.appendChild(tile);
             });
-
-            boardEl.replaceChildren(fragment);
+            updateBoardSize();
         }
 
         function renderScores() {
             const counts = territoryCounts();
-            const fragment = document.createDocumentFragment();
+            const percents = counts.map((count) => (count / cells.length) * 100);
+            const scoreLabels = percents.map((percent) => `${percent.toFixed(2)}%`);
+            const humanColor = currentColorOf(0);
+            const computerColor = currentColorOf(1);
+            const humanColorValue = humanColor >= 0 ? COLORS[humanColor].value : "#2b3045";
+            const computerColorValue = computerColor >= 0 ? COLORS[computerColor].value : "#2b3045";
 
-            PLAYERS.forEach((player) => {
-                const count = counts[player.id];
-                const percent = Math.round((count / cells.length) * 100);
-                const currentColor = currentColorOf(player.id);
-                const colorValue = currentColor >= 0 ? COLORS[currentColor].value : "#2b3045";
-                const colorName = currentColor >= 0 ? COLORS[currentColor].name : "нет плиток";
-                const row = document.createElement("div");
-                row.className = "score-row";
-                row.style.setProperty("--marker-color", player.marker);
-                row.style.setProperty("--current-color", colorValue);
-                row.style.setProperty("--score-width", `${percent}%`);
-                row.innerHTML = `
-                    <span class="player-dot" aria-hidden="true"></span>
-                    <span class="score-name">
-                        <strong>${player.name}</strong>
-                        <span>${player.label}; цвет: ${colorName}</span>
-                    </span>
-                    <span class="score-value">${count} (${percent}%)</span>
-                    <span class="progress" aria-hidden="true"><span></span></span>
+            humanScoreBar.style.setProperty("--score-width", `${percents[0]}%`);
+            humanScoreBar.style.setProperty("--score-color", humanColorValue);
+            humanScoreBar.setAttribute("aria-label", `Человек захватил ${scoreLabels[0]} поля`);
+            humanScoreLabel.textContent = scoreLabels[0];
+
+            computerScoreBar.style.setProperty("--score-width", `${percents[1]}%`);
+            computerScoreBar.style.setProperty("--score-color", computerColorValue);
+            computerScoreBar.setAttribute("aria-label", `Компьютер захватил ${scoreLabels[1]} поля`);
+            computerScoreLabel.textContent = scoreLabels[1];
+        }
+
+        function createPaletteMarker(type) {
+            const marker = document.createElement("span");
+            marker.className = `palette-marker ${type}-marker`;
+            marker.setAttribute("aria-hidden", "true");
+
+            if (type === "human") {
+                marker.innerHTML = `
+                    <span class="human-head"></span>
+                    <span class="human-body"></span>
+                    <span class="human-arm left"></span>
+                    <span class="human-arm right"></span>
+                    <span class="human-leg left"></span>
+                    <span class="human-leg right"></span>
                 `;
-                fragment.appendChild(row);
-            });
+                return marker;
+            }
 
-            scoreListEl.replaceChildren(fragment);
+            marker.innerHTML = `
+                <span class="robot-antenna"></span>
+                <span class="robot-head"></span>
+                <span class="robot-eye left"></span>
+                <span class="robot-eye right"></span>
+                <span class="robot-body"></span>
+                <span class="robot-arm left"></span>
+                <span class="robot-arm right"></span>
+                <span class="robot-leg left"></span>
+                <span class="robot-leg right"></span>
+            `;
+            return marker;
         }
 
         function renderPalette() {
             const legal = new Set(legalColorsFor(0));
             const ownColor = currentColorOf(0);
             const computerColor = currentColorOf(1);
+            const opponentColors = new Set(opponentCurrentColorsFor(0));
             const fragment = document.createDocumentFragment();
 
             COLORS.forEach((color, index) => {
@@ -1742,19 +2259,27 @@
 
                 if (index === ownColor) {
                     reason = "это твой текущий цвет";
-                } else if (index === computerColor) {
-                    reason = "это текущий цвет компьютера";
+                } else if (opponentColors.has(index)) {
+                    reason = "это текущий цвет соперника";
                 } else if (disabled) {
                     reason = "ход временно недоступен";
                 }
 
                 button.className = "color-btn";
+                if (index === ownColor || index === computerColor) {
+                    button.classList.add("occupied");
+                }
                 button.type = "button";
                 button.style.setProperty("--choice-color", color.value);
                 button.disabled = disabled;
                 button.title = `${color.name}: ${reason}`;
                 button.setAttribute("aria-label", `Выбрать ${color.name}: ${reason}`);
                 button.addEventListener("click", () => handleHumanMove(index));
+                if (index === ownColor) {
+                    button.appendChild(createPaletteMarker("human"));
+                } else if (index === computerColor) {
+                    button.appendChild(createPaletteMarker("robot"));
+                }
                 fragment.appendChild(button);
             });
 
@@ -1762,32 +2287,9 @@
         }
 
         function renderStatus() {
-            const counts = territoryCounts();
-            const free = cells.length - counts[0] - counts[1];
-            const humanPercent = Math.round((counts[0] / cells.length) * 100);
-            const computerPercent = Math.round((counts[1] / cells.length) * 100);
-
-            turnInfoEl.textContent = `Ход ${moveNumber}`;
-            historyValueEl.textContent = String(history.length);
-            targetValueEl.textContent = String(winThreshold());
-            freeValueEl.textContent = String(free);
-            undoButton.disabled = aiThinking || !history.length;
-            restartButton.disabled = aiThinking || !initialSnapshot;
-
-            if (gameOver) {
-                statusTitleEl.textContent = winnerId === 0 ? "Победа!" : "Победил компьютер";
-                statusTextEl.textContent = `${PLAYERS[winnerId].name} захватил больше половины поля. Можно откатить ход или переиграть это поле.`;
-                return;
-            }
-
-            if (aiThinking || currentPlayer === 1) {
-                statusTitleEl.textContent = "Ход компьютера";
-                statusTextEl.textContent = "Компьютер выбирает цвет по ожидаемому захвату и риску твоего ответа.";
-                return;
-            }
-
-            statusTitleEl.textContent = "Твой ход";
-            statusTextEl.textContent = `У тебя ${humanPercent}%, у компьютера ${computerPercent}%. Нужно ${winThreshold()} плиток для победы.`;
+            restartButton.disabled = !initialSnapshot;
+            newGameButton.disabled = false;
+            backToMenuButton.disabled = false;
         }
 
         function render() {
@@ -1812,6 +2314,13 @@
                 endgameTextEl.textContent = "Ты захватил больше половины поля. Салют!";
                 createFireworks();
                 endgameEffectEl.classList.add("visible", "victory");
+                return;
+            }
+
+            if (playerId === null) {
+                endgameTitleEl.textContent = "Ничья!";
+                endgameTextEl.textContent = "Победила дружба.";
+                endgameEffectEl.classList.add("visible", "draw");
                 return;
             }
 
@@ -1860,34 +2369,32 @@
             }
         }
 
-        function showToast(message) {
-            window.clearTimeout(toastTimer);
-            toastEl.textContent = message;
-            toastEl.classList.add("visible");
-            toastTimer = window.setTimeout(() => {
-                toastEl.classList.remove("visible");
-            }, 3000);
-        }
-
         function registerServiceWorker() {
             if (!("serviceWorker" in navigator)) {
-                installHintEl.textContent = "Service Worker не поддерживается этим браузером";
+                if (installHintEl) {
+                    installHintEl.textContent = "Service Worker не поддерживается этим браузером";
+                }
                 return;
             }
 
             window.addEventListener("load", () => {
                 navigator.serviceWorker.register("sw.js")
                     .then(() => {
-                        installHintEl.textContent = "PWA готова: можно установить и играть офлайн";
+                        if (installHintEl) {
+                            installHintEl.textContent = "PWA готова: можно установить и играть офлайн";
+                        }
                     })
                     .catch(() => {
-                        installHintEl.textContent = "Игра запущена, офлайн-кэш пока недоступен";
+                        if (installHintEl) {
+                            installHintEl.textContent = "Игра запущена, офлайн-кэш пока недоступен";
+                        }
                     });
             });
         }
 
         function init() {
             loadSettings();
+            applyAutoBoardDimensions();
             syncSettingsInputs();
             showStartScreen();
 
@@ -1900,8 +2407,22 @@
             settingsCloseButton.addEventListener("click", () => closeDialog(settingsDialogEl));
             settingsSaveButton.addEventListener("click", saveSettingsFromInputs);
             rulesCloseButton.addEventListener("click", () => closeDialog(rulesDialogEl));
+            gameMenuButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                toggleGameMenu();
+            });
+            document.addEventListener("click", (event) => {
+                if (!gameMenuEl.contains(event.target)) {
+                    closeGameMenu();
+                }
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    closeGameMenu();
+                }
+            });
+            window.addEventListener("resize", updateBoardSize);
             backToMenuButton.addEventListener("click", showStartScreen);
-            undoButton.addEventListener("click", undoMove);
             restartButton.addEventListener("click", restartSameField);
             newGameButton.addEventListener("click", startNewGame);
             endgameNewGameButton.addEventListener("click", startNewGame);
