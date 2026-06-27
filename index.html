@@ -351,6 +351,12 @@
             box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
         }
 
+        @property --cell-color {
+            syntax: "<color>";
+            inherits: false;
+            initial-value: #7b7b7b;
+        }
+
         .cell {
             position: relative;
             min-width: 0;
@@ -362,7 +368,7 @@
             box-shadow:
                 inset 0 0 0 1px rgba(255, 255, 255, 0.2),
                 inset 0 -10px 18px rgba(0, 0, 0, 0.15);
-            transition: transform 140ms ease, box-shadow 140ms ease, background 160ms ease;
+            transition: transform 140ms ease, box-shadow 140ms ease, --cell-color 220ms ease, background 220ms ease;
         }
 
         .side-card {
@@ -988,6 +994,7 @@
         let winnerId = null;
         let aiThinking = false;
         let toastTimer = 0;
+        let tileElements = [];
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
@@ -1675,28 +1682,51 @@
             });
         }
 
+        function updateTileElement(tile, cell) {
+            tile.dataset.owner = String(cell.owner);
+            tile.dataset.frontier = String(isFrontierCell(cell));
+            tile.dataset.color = String(cell.color);
+            tile.style.setProperty("--cell-color", COLORS[cell.color].value);
+
+            const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
+            tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
+            tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
+        }
+
+        function createTileElement() {
+            const tile = document.createElement("button");
+            tile.className = "cell";
+            tile.type = "button";
+            tile.setAttribute("role", "gridcell");
+            tile.addEventListener("click", () => {
+                const colorIndex = Number.parseInt(tile.dataset.color, 10);
+                if (Number.isInteger(colorIndex)) {
+                    handleHumanMove(colorIndex);
+                }
+            });
+            return tile;
+        }
+
         function renderBoard() {
             boardEl.style.gridTemplateColumns = `repeat(${boardWidth}, 1fr)`;
             boardWrapEl.style.setProperty("--board-ratio", `${boardWidth} / ${boardHeight}`);
-            const fragment = document.createDocumentFragment();
 
-            cells.forEach((cell) => {
-                const tile = document.createElement("button");
-                tile.className = "cell";
-                tile.type = "button";
-                tile.setAttribute("role", "gridcell");
-                tile.dataset.owner = String(cell.owner);
-                tile.dataset.frontier = String(isFrontierCell(cell));
-                tile.style.setProperty("--cell-color", COLORS[cell.color].value);
+            const needsRebuild = tileElements.length !== cells.length;
+            if (needsRebuild) {
+                const fragment = document.createDocumentFragment();
+                tileElements = cells.map((cell) => {
+                    const tile = createTileElement();
+                    updateTileElement(tile, cell);
+                    fragment.appendChild(tile);
+                    return tile;
+                });
+                boardEl.replaceChildren(fragment);
+                return;
+            }
 
-                const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
-                tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
-                tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
-                tile.addEventListener("click", () => handleHumanMove(cell.color));
-                fragment.appendChild(tile);
+            cells.forEach((cell, index) => {
+                updateTileElement(tileElements[index], cell);
             });
-
-            boardEl.replaceChildren(fragment);
         }
 
         function renderScores() {
