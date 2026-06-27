@@ -388,7 +388,7 @@
 
         .cell.captured {
             z-index: 2;
-            animation: capture-pulse 520ms ease-out;
+            animation: capture-pulse 260ms ease-out;
         }
 
         .cell.captured-human {
@@ -396,8 +396,8 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.24),
                 inset 0 0 0 1px rgba(255, 255, 255, 0.16),
                 inset 0 -10px 18px rgba(0, 0, 0, 0.14),
-                0 0 0 2px rgba(255, 255, 255, 0.95),
-                0 0 16px rgba(255, 255, 255, 0.72);
+                inset 0 0 0 2px rgba(255, 255, 255, 0.95),
+                inset 0 0 12px rgba(255, 255, 255, 0.62);
         }
 
         .cell.captured-computer {
@@ -405,23 +405,20 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.24),
                 inset 0 0 0 1px rgba(255, 255, 255, 0.16),
                 inset 0 -10px 18px rgba(0, 0, 0, 0.14),
-                0 0 0 2px rgba(17, 24, 39, 0.95),
-                0 0 16px rgba(17, 24, 39, 0.55);
+                inset 0 0 0 2px rgba(17, 24, 39, 0.95),
+                inset 0 0 12px rgba(17, 24, 39, 0.48);
         }
 
         @keyframes capture-pulse {
             0% {
-                transform: scale(1.12);
-                filter: brightness(1.4);
+                filter: brightness(1.35);
             }
 
             55% {
-                transform: scale(1.04);
-                filter: brightness(1.15);
+                filter: brightness(1.12);
             }
 
             100% {
-                transform: scale(1);
                 filter: brightness(1);
             }
         }
