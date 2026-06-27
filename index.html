@@ -364,11 +364,49 @@
             border: 0;
             border-radius: clamp(3px, 0.55vw, 7px);
             appearance: none;
+            overflow: hidden;
             background: var(--cell-color);
             box-shadow:
                 inset 0 0 0 1px rgba(255, 255, 255, 0.2),
                 inset 0 -10px 18px rgba(0, 0, 0, 0.15);
             transition: transform 140ms ease, box-shadow 140ms ease, --cell-color 220ms ease, background 220ms ease;
+        }
+
+        .cell::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cell.capture-flash::after {
+            animation: capture-flash 480ms ease-out forwards;
+        }
+
+        .cell.capture-flash-human::after {
+            background: rgba(255, 255, 255, 0.5);
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.95),
+                0 0 16px rgba(255, 255, 255, 0.45);
+        }
+
+        .cell.capture-flash-computer::after {
+            background: rgba(0, 0, 0, 0.24);
+            box-shadow:
+                inset 0 0 0 2px rgba(17, 24, 39, 0.92),
+                0 0 14px rgba(0, 0, 0, 0.35);
+        }
+
+        @keyframes capture-flash {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
         }
 
         .side-card {
@@ -995,6 +1033,7 @@
         let aiThinking = false;
         let toastTimer = 0;
         let tileElements = [];
+        let captureHighlightTimer = 0;
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
@@ -1136,6 +1175,7 @@
             aiThinking = false;
             syncSettingsInputs();
             clearEndgameEffect();
+            clearCaptureHighlights();
             saveGame();
             render();
         }
@@ -1524,17 +1564,26 @@
 
         function simulateMove(playerId, colorIndex, source = cells) {
             const nextCells = cloneCells(source);
+            const beforeOwners = nextCells.map((cell) => cell.owner);
             const before = territoryCounts(nextCells)[playerId];
             const flood = applyFloodCapture(playerId, colorIndex, nextCells);
             const surround = applySurroundCapture(playerId, colorIndex, nextCells);
             const after = territoryCounts(nextCells)[playerId];
+            const capturedIndices = [];
+
+            nextCells.forEach((cell, index) => {
+                if (beforeOwners[index] !== playerId && cell.owner === playerId) {
+                    capturedIndices.push(index);
+                }
+            });
 
             return {
                 nextCells,
                 gained: after - before,
                 capturedByColor: flood.capturedByColor,
                 capturedBySurround: surround.capturedBySurround,
-                stolen: flood.stolenByColor + surround.stolenBySurround
+                stolen: flood.stolenByColor + surround.stolenBySurround,
+                capturedIndices
             };
         }
 
@@ -1606,11 +1655,12 @@
             }
 
             history.push(makeSnapshot());
-            applyMove(0, colorIndex);
+            const result = applyMove(0, colorIndex);
             currentPlayer = 1;
             moveNumber += 1;
             saveGame();
             render();
+            highlightCapturedCells(result.capturedIndices, 0);
 
             if (!finishIfNeeded()) {
                 runComputerTurn();
@@ -1623,12 +1673,13 @@
             await wait(420);
 
             const colorIndex = chooseComputerColor();
-            applyMove(1, colorIndex);
+            const result = applyMove(1, colorIndex);
             currentPlayer = 0;
             moveNumber += 1;
             aiThinking = false;
             saveGame();
             render();
+            highlightCapturedCells(result.capturedIndices, 1);
             finishIfNeeded();
         }
 
@@ -1663,6 +1714,7 @@
             history = [];
             initialSnapshot = makeSnapshot();
             clearEndgameEffect();
+            clearCaptureHighlights();
             saveGame();
             render();
             showToast("Новое поле готово. Первый ход за человеком.");
@@ -1680,6 +1732,32 @@
                 const neighbor = getCell(nx, ny);
                 return neighbor && neighbor.owner !== 0;
             });
+        }
+
+        function clearCaptureHighlights() {
+            window.clearTimeout(captureHighlightTimer);
+            tileElements.forEach((tile) => {
+                tile.classList.remove("capture-flash", "capture-flash-human", "capture-flash-computer");
+            });
+        }
+
+        function highlightCapturedCells(capturedIndices, playerId) {
+            clearCaptureHighlights();
+
+            if (!capturedIndices.length || tileElements.length !== cells.length) {
+                return;
+            }
+
+            const playerClass = playerId === 0 ? "capture-flash-human" : "capture-flash-computer";
+            capturedIndices.forEach((index) => {
+                const tile = tileElements[index];
+                if (!tile) {
+                    return;
+                }
+                tile.classList.add("capture-flash", playerClass);
+            });
+
+            captureHighlightTimer = window.setTimeout(clearCaptureHighlights, 520);
         }
 
         function updateTileElement(tile, cell) {
@@ -1713,6 +1791,7 @@
 
             const needsRebuild = tileElements.length !== cells.length;
             if (needsRebuild) {
+                clearCaptureHighlights();
                 const fragment = document.createDocumentFragment();
                 tileElements = cells.map((cell) => {
                     const tile = createTileElement();
