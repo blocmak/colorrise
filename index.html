@@ -1361,6 +1361,15 @@
         let aiThinking = false;
         let aiTurnId = 0;
 
+        let renderedOwners = [];
+        let renderedColors = [];
+        let renderedFrontiers = [];
+        let paletteButtons = [];
+        let humanMarkerEl = null;
+        let robotMarkerEl = null;
+        let humanMarkerIndex = -1;
+        let robotMarkerIndex = -1;
+
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
         }
@@ -1503,13 +1512,19 @@
             return source[indexOf(x, y)];
         }
 
-        function neighborsOf(x, y) {
-            return [
-                [x + 1, y],
-                [x - 1, y],
-                [x, y + 1],
-                [x, y - 1]
-            ].filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < boardWidth && ny < boardHeight);
+        function forEachNeighbor(x, y, callback) {
+            if (y - 1 >= 0) {
+                callback(x, y - 1);
+            }
+            if (x + 1 < boardWidth) {
+                callback(x + 1, y);
+            }
+            if (y + 1 < boardHeight) {
+                callback(x, y + 1);
+            }
+            if (x - 1 >= 0) {
+                callback(x - 1, y);
+            }
         }
 
         function cloneCells(source = cells) {
@@ -1575,7 +1590,7 @@
             while (seeds.length < targetSize) {
                 const candidates = [];
                 seeds.forEach(([x, y]) => {
-                    neighborsOf(x, y).forEach(([nx, ny]) => {
+                    forEachNeighbor(x, y, (nx, ny) => {
                         const key = indexOf(nx, ny);
                         if (!used.has(key)) {
                             candidates.push([nx, ny]);
@@ -1597,34 +1612,38 @@
 
         function claimStartingRegion(playerId, corner, colorIndex, source) {
             const queue = [];
+            let head = 0;
             const visited = new Set();
 
+            const processNeighbor = (nx, ny) => {
+                const key = indexOf(nx, ny);
+                if (visited.has(key)) {
+                    return;
+                }
+
+                const neighbor = source[key];
+                if (!neighbor || neighbor.color !== colorIndex) {
+                    return;
+                }
+
+                visited.add(key);
+                neighbor.owner = playerId;
+                neighbor.color = colorIndex;
+                queue.push(key);
+            };
+
             randomStartingSeeds(corner).forEach(([x, y]) => {
-                const cell = getCell(x, y, source);
+                const key = indexOf(x, y);
+                const cell = source[key];
                 cell.owner = playerId;
                 cell.color = colorIndex;
-                queue.push([x, y]);
-                visited.add(indexOf(x, y));
+                queue.push(key);
+                visited.add(key);
             });
 
-            while (queue.length) {
-                const [x, y] = queue.shift();
-                neighborsOf(x, y).forEach(([nx, ny]) => {
-                    const key = indexOf(nx, ny);
-                    if (visited.has(key)) {
-                        return;
-                    }
-
-                    const neighbor = getCell(nx, ny, source);
-                    if (!neighbor || neighbor.color !== colorIndex) {
-                        return;
-                    }
-
-                    visited.add(key);
-                    neighbor.owner = playerId;
-                    neighbor.color = colorIndex;
-                    queue.push([nx, ny]);
-                });
+            while (head < queue.length) {
+                const index = queue[head++];
+                forEachNeighbor(index % boardWidth, (index / boardWidth) | 0, processNeighbor);
             }
 
             return visited.size;
@@ -1785,41 +1804,45 @@
 
         function applyFloodCapture(playerId, colorIndex, source) {
             const queue = [];
+            let head = 0;
             const visited = new Set();
             let capturedByColor = 0;
-            let stolenByColor = 0;
+            const stolenByColor = 0;
+
+            const processNeighbor = (nx, ny) => {
+                const key = indexOf(nx, ny);
+                if (visited.has(key)) {
+                    return;
+                }
+
+                const neighbor = source[key];
+                if (!neighbor || neighbor.color !== colorIndex) {
+                    return;
+                }
+
+                visited.add(key);
+                if (neighbor.owner === -1) {
+                    capturedByColor += 1;
+                    neighbor.owner = playerId;
+                    neighbor.color = colorIndex;
+                } else if (neighbor.owner >= 0) {
+                    return;
+                }
+                queue.push(key);
+            };
 
             source.forEach((cell) => {
                 if (cell.owner === playerId) {
                     cell.color = colorIndex;
-                    queue.push([cell.x, cell.y]);
-                    visited.add(indexOf(cell.x, cell.y));
+                    const key = indexOf(cell.x, cell.y);
+                    queue.push(key);
+                    visited.add(key);
                 }
             });
 
-            while (queue.length) {
-                const [x, y] = queue.shift();
-                neighborsOf(x, y).forEach(([nx, ny]) => {
-                    const key = indexOf(nx, ny);
-                    if (visited.has(key)) {
-                        return;
-                    }
-
-                    const neighbor = getCell(nx, ny, source);
-                    if (!neighbor || neighbor.color !== colorIndex) {
-                        return;
-                    }
-
-                    visited.add(key);
-                    if (neighbor.owner === -1) {
-                        capturedByColor += 1;
-                        neighbor.owner = playerId;
-                        neighbor.color = colorIndex;
-                    } else if (neighbor.owner >= 0) {
-                        return;
-                    }
-                    queue.push([nx, ny]);
-                });
+            while (head < queue.length) {
+                const index = queue[head++];
+                forEachNeighbor(index % boardWidth, (index / boardWidth) | 0, processNeighbor);
             }
 
             return { capturedByColor, stolenByColor };
@@ -1881,31 +1904,33 @@
                 }
 
                 const component = [];
-                const queue = [[cell.x, cell.y]];
+                const queue = [startKey];
+                let head = 0;
                 let edgeMask = 0;
                 visited.add(startKey);
 
-                while (queue.length) {
-                    const [x, y] = queue.shift();
-                    const current = getCell(x, y, source);
+                const processNeighbor = (nx, ny) => {
+                    const key = indexOf(nx, ny);
+                    const neighbor = source[key];
+
+                    if (neighbor.owner === playerId) {
+                        return;
+                    }
+
+                    if (visited.has(key)) {
+                        return;
+                    }
+
+                    visited.add(key);
+                    queue.push(key);
+                };
+
+                while (head < queue.length) {
+                    const index = queue[head++];
+                    const current = source[index];
                     component.push(current);
                     edgeMask |= edgeMaskForCell(current);
-
-                    neighborsOf(x, y).forEach(([nx, ny]) => {
-                        const neighbor = getCell(nx, ny, source);
-                        const key = indexOf(nx, ny);
-
-                        if (neighbor.owner === playerId) {
-                            return;
-                        }
-
-                        if (visited.has(key)) {
-                            return;
-                        }
-
-                        visited.add(key);
-                        queue.push([nx, ny]);
-                    });
+                    forEachNeighbor(current.x, current.y, processNeighbor);
                 }
 
                 components.push({
@@ -2122,10 +2147,20 @@
             if (cell.owner !== 0) {
                 return false;
             }
-            return neighborsOf(cell.x, cell.y).some(([nx, ny]) => {
-                const neighbor = getCell(nx, ny);
-                return neighbor && neighbor.owner !== 0;
-            });
+            const { x, y } = cell;
+            if (y - 1 >= 0 && cells[indexOf(x, y - 1)].owner !== 0) {
+                return true;
+            }
+            if (x + 1 < boardWidth && cells[indexOf(x + 1, y)].owner !== 0) {
+                return true;
+            }
+            if (y + 1 < boardHeight && cells[indexOf(x, y + 1)].owner !== 0) {
+                return true;
+            }
+            if (x - 1 >= 0 && cells[indexOf(x - 1, y)].owner !== 0) {
+                return true;
+            }
+            return false;
         }
 
         function updateBoardSize() {
@@ -2176,6 +2211,9 @@
                 boardEl.replaceChildren(fragment);
                 boardEl.dataset.width = String(boardWidth);
                 boardEl.dataset.height = String(boardHeight);
+                renderedOwners = new Array(cells.length).fill(-2);
+                renderedColors = new Array(cells.length).fill(-1);
+                renderedFrontiers = new Array(cells.length).fill(undefined);
             }
 
             cells.forEach((cell, cellIndex) => {
@@ -2183,15 +2221,35 @@
                 if (!tile) {
                     return;
                 }
-                tile.dataset.owner = String(cell.owner);
-                tile.dataset.frontier = String(isFrontierCell(cell));
-                tile.style.setProperty("--cell-color", COLORS[cell.color].value);
 
-                const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
-                tile.title = `${ownerName}: ${COLORS[cell.color].name}`;
-                tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
+                const ownerChanged = renderedOwners[cellIndex] !== cell.owner;
+                const colorChanged = renderedColors[cellIndex] !== cell.color;
+                const frontier = isFrontierCell(cell);
+
+                if (ownerChanged) {
+                    tile.dataset.owner = String(cell.owner);
+                    renderedOwners[cellIndex] = cell.owner;
+                }
+
+                if (renderedFrontiers[cellIndex] !== frontier) {
+                    tile.dataset.frontier = String(frontier);
+                    renderedFrontiers[cellIndex] = frontier;
+                }
+
+                if (colorChanged) {
+                    tile.style.setProperty("--cell-color", COLORS[cell.color].value);
+                    renderedColors[cellIndex] = cell.color;
+                }
+
+                if (ownerChanged || colorChanged) {
+                    const ownerName = cell.owner >= 0 ? PLAYERS[cell.owner].name : "Нейтральная плитка";
+                    tile.setAttribute("aria-label", `${ownerName}, цвет ${COLORS[cell.color].name}. Нажать, чтобы выбрать этот цвет.`);
+                }
             });
-            updateBoardSize();
+
+            if (shouldRebuild) {
+                updateBoardSize();
+            }
         }
 
         function renderScores() {
@@ -2245,15 +2303,49 @@
             return marker;
         }
 
+        function buildPalette() {
+            const fragment = document.createDocumentFragment();
+            paletteButtons = COLORS.map((color, index) => {
+                const button = document.createElement("button");
+                button.className = "color-btn";
+                button.type = "button";
+                button.style.setProperty("--choice-color", color.value);
+                button.addEventListener("click", () => handleHumanMove(index));
+                fragment.appendChild(button);
+                return button;
+            });
+            paletteEl.replaceChildren(fragment);
+
+            humanMarkerEl = createPaletteMarker("human");
+            robotMarkerEl = createPaletteMarker("robot");
+            humanMarkerIndex = -1;
+            robotMarkerIndex = -1;
+        }
+
+        function moveMarker(markerEl, targetIndex, currentIndex) {
+            if (currentIndex === targetIndex) {
+                return currentIndex;
+            }
+            if (targetIndex >= 0) {
+                paletteButtons[targetIndex].appendChild(markerEl);
+            } else if (markerEl.parentNode) {
+                markerEl.remove();
+            }
+            return targetIndex;
+        }
+
         function renderPalette() {
+            if (paletteButtons.length !== COLORS.length) {
+                buildPalette();
+            }
+
             const legal = new Set(legalColorsFor(0));
             const ownColor = currentColorOf(0);
             const computerColor = currentColorOf(1);
             const opponentColors = new Set(opponentCurrentColorsFor(0));
-            const fragment = document.createDocumentFragment();
 
             COLORS.forEach((color, index) => {
-                const button = document.createElement("button");
+                const button = paletteButtons[index];
                 const disabled = gameOver || aiThinking || currentPlayer !== 0 || !legal.has(index);
                 let reason = "можно выбрать";
 
@@ -2265,25 +2357,15 @@
                     reason = "ход временно недоступен";
                 }
 
-                button.className = "color-btn";
-                if (index === ownColor || index === computerColor) {
-                    button.classList.add("occupied");
+                if (button.disabled !== disabled) {
+                    button.disabled = disabled;
                 }
-                button.type = "button";
-                button.style.setProperty("--choice-color", color.value);
-                button.disabled = disabled;
-                button.title = `${color.name}: ${reason}`;
+                button.classList.toggle("occupied", index === ownColor || index === computerColor);
                 button.setAttribute("aria-label", `Выбрать ${color.name}: ${reason}`);
-                button.addEventListener("click", () => handleHumanMove(index));
-                if (index === ownColor) {
-                    button.appendChild(createPaletteMarker("human"));
-                } else if (index === computerColor) {
-                    button.appendChild(createPaletteMarker("robot"));
-                }
-                fragment.appendChild(button);
             });
 
-            paletteEl.replaceChildren(fragment);
+            humanMarkerIndex = moveMarker(humanMarkerEl, ownColor, humanMarkerIndex);
+            robotMarkerIndex = moveMarker(robotMarkerEl, computerColor, robotMarkerIndex);
         }
 
         function renderStatus() {
