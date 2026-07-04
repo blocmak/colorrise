@@ -2342,28 +2342,23 @@
                 buildPalette();
             }
 
-            const legal = new Set(legalColorsFor(0));
             const ownColor = currentColorOf(0);
             const computerColor = currentColorOf(1);
             const opponentColors = new Set(opponentCurrentColorsFor(0));
 
             COLORS.forEach((color, index) => {
                 const button = paletteButtons[index];
-                const disabled = gameOver || aiThinking || currentPlayer !== 0 || !legal.has(index);
+                const occupied = index === ownColor || index === computerColor;
                 let reason = "можно выбрать";
 
                 if (index === ownColor) {
                     reason = "это твой текущий цвет";
                 } else if (opponentColors.has(index)) {
                     reason = "это текущий цвет соперника";
-                } else if (disabled) {
-                    reason = "ход временно недоступен";
                 }
 
-                if (button.disabled !== disabled) {
-                    button.disabled = disabled;
-                }
-                button.classList.toggle("occupied", index === ownColor || index === computerColor);
+                button.classList.toggle("occupied", occupied);
+                button.setAttribute("aria-disabled", String(occupied));
                 button.setAttribute("aria-label", `Выбрать ${color.name}: ${reason}`);
             });
 
