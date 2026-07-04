@@ -513,7 +513,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: var(--score-width);
+            width: 100%;
             min-width: 0;
             overflow: visible;
             background:
@@ -523,15 +523,20 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.32),
                 inset 0 -12px 18px rgba(0, 0, 0, 0.18),
                 0 0 20px rgba(255, 255, 255, 0.12);
-            transition: width 220ms ease, background 500ms ease;
+            transform: scaleX(var(--score-scale, 0));
+            transform-origin: left center;
+            will-change: transform;
+            transition: transform 220ms ease, background 500ms ease;
         }
 
         .score-bar.human {
             left: 0;
+            transform-origin: left center;
         }
 
         .score-bar.computer {
             right: 0;
+            transform-origin: right center;
         }
 
         .score-center-line {
@@ -2261,12 +2266,12 @@
             const humanColorValue = humanColor >= 0 ? COLORS[humanColor].value : "#2b3045";
             const computerColorValue = computerColor >= 0 ? COLORS[computerColor].value : "#2b3045";
 
-            humanScoreBar.style.setProperty("--score-width", `${percents[0]}%`);
+            humanScoreBar.style.setProperty("--score-scale", `${percents[0] / 100}`);
             humanScoreBar.style.setProperty("--score-color", humanColorValue);
             humanScoreBar.setAttribute("aria-label", `Человек захватил ${scoreLabels[0]} поля`);
             humanScoreLabel.textContent = scoreLabels[0];
 
-            computerScoreBar.style.setProperty("--score-width", `${percents[1]}%`);
+            computerScoreBar.style.setProperty("--score-scale", `${percents[1] / 100}`);
             computerScoreBar.style.setProperty("--score-color", computerColorValue);
             computerScoreBar.setAttribute("aria-label", `Компьютер захватил ${scoreLabels[1]} поля`);
             computerScoreLabel.textContent = scoreLabels[1];
