@@ -2084,7 +2084,7 @@
             aiTurnId = turnId;
             aiThinking = true;
             render();
-            await wait(420);
+            await nextPaint();
 
             if (turnId !== aiTurnId || gameOver || currentPlayer !== 1) {
                 if (turnId === aiTurnId) {
@@ -2142,8 +2142,10 @@
             render();
         }
 
-        function wait(ms) {
-            return new Promise((resolve) => window.setTimeout(resolve, ms));
+        function nextPaint() {
+            return new Promise((resolve) => {
+                window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+            });
         }
 
         function isFrontierCell(cell) {
