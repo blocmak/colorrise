@@ -1227,7 +1227,7 @@
                 <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="menu-title">ColorRise</h1>
                 <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
-                <div class="build-info">Сборка: 2026-06-26 23:43:36 UTC · Версия: colorwars-duel-pwa-v24</div>
+                <div class="build-info" id="buildInfo">Сборка: — · Версия: —</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
@@ -1350,6 +1350,10 @@
         const START_MAX_SEEDS = 6;
         const STORAGE_KEY = "colorwars-duel-state-v4";
         const SETTINGS_KEY = "colorwars-duel-settings-v1";
+        // Bump APP_VERSION together with CACHE_NAME in sw.js on every release,
+        // and set BUILD_DATE to the release moment (stored in UTC, shown in МСК).
+        const APP_VERSION = "colorwars-duel-pwa-v25";
+        const BUILD_DATE = "2026-07-06T20:10:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -1426,6 +1430,7 @@
         const endgameReplayButton = document.getElementById("endgameReplayButton");
         const endgameMenuButton = document.getElementById("endgameMenuButton");
         const installHintEl = document.getElementById("installHint");
+        const buildInfoEl = document.getElementById("buildInfo");
 
         let boardWidth = DEFAULT_BOARD_WIDTH;
         let boardHeight = DEFAULT_BOARD_HEIGHT;
@@ -2695,6 +2700,29 @@
             }
         }
 
+        function formatBuildDate(iso) {
+            const date = new Date(iso);
+            if (Number.isNaN(date.getTime())) {
+                return iso;
+            }
+            return new Intl.DateTimeFormat("ru-RU", {
+                timeZone: "Europe/Moscow",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            }).format(date);
+        }
+
+        function renderBuildInfo() {
+            if (!buildInfoEl) {
+                return;
+            }
+            buildInfoEl.textContent = `Сборка: ${formatBuildDate(BUILD_DATE)} МСК · Версия: ${APP_VERSION}`;
+        }
+
         function registerServiceWorker() {
             if (!("serviceWorker" in navigator)) {
                 if (installHintEl) {
@@ -2719,6 +2747,7 @@
         }
 
         function init() {
+            renderBuildInfo();
             loadSettings();
             applyAutoBoardDimensions();
             syncSettingsInputs();
