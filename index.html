@@ -727,6 +727,36 @@
             opacity: 0.42;
         }
 
+        .dropdown-field {
+            display: grid;
+            gap: 6px;
+            padding: 4px 4px 10px;
+            text-align: left;
+        }
+
+        .dropdown-field span {
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 750;
+            letter-spacing: 0.02em;
+        }
+
+        .dropdown-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            background: #252e46;
+            color: var(--text);
+            font: inherit;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .dropdown-field select option {
+            color: #0d1020;
+        }
+
         .palette-panel {
             margin-top: 8px;
             padding: 6px;
@@ -1229,6 +1259,15 @@
                     </button>
                     <div class="game-dropdown" id="gameDropdown" role="menu" aria-label="Меню игры">
                         <div class="game-dropdown-title">COLORRISE</div>
+                        <label class="dropdown-field" for="gameDifficultyInput">
+                            <span>Сложность соперника</span>
+                            <select id="gameDifficultyInput" aria-label="Сложность соперника">
+                                <option value="1">1. Легко</option>
+                                <option value="2">2. Нормально</option>
+                                <option value="3">3. Сложно</option>
+                                <option value="4">4. Невозможно</option>
+                            </select>
+                        </label>
                         <button class="dropdown-item" id="restartButton" type="button" role="menuitem">Начать сначала</button>
                         <button class="dropdown-item" id="newGameButton" type="button" role="menuitem">Новая игра</button>
                         <button class="dropdown-item" id="backToMenuButton" type="button" role="menuitem">Меню</button>
@@ -1362,6 +1401,7 @@
         const boardWidthInput = document.getElementById("boardWidthInput");
         const boardHeightInput = document.getElementById("boardHeightInput");
         const difficultyInput = document.getElementById("difficultyInput");
+        const gameDifficultyInput = document.getElementById("gameDifficultyInput");
         const settingsCloseButton = document.getElementById("settingsCloseButton");
         const settingsSaveButton = document.getElementById("settingsSaveButton");
         const rulesCloseButton = document.getElementById("rulesCloseButton");
@@ -1510,6 +1550,15 @@
             if (difficultyInput) {
                 difficultyInput.value = String(difficulty);
             }
+            if (gameDifficultyInput) {
+                gameDifficultyInput.value = String(difficulty);
+            }
+        }
+
+        function changeDifficulty(value) {
+            difficulty = clampDifficulty(value);
+            syncSettingsInputs();
+            saveSettings();
         }
 
         function saveSettingsFromInputs() {
@@ -2684,6 +2733,11 @@
             settingsCloseButton.addEventListener("click", () => closeDialog(settingsDialogEl));
             settingsSaveButton.addEventListener("click", saveSettingsFromInputs);
             rulesCloseButton.addEventListener("click", () => closeDialog(rulesDialogEl));
+            if (gameDifficultyInput) {
+                gameDifficultyInput.addEventListener("change", () => {
+                    changeDifficulty(gameDifficultyInput.value);
+                });
+            }
             gameMenuButton.addEventListener("click", (event) => {
                 event.stopPropagation();
                 toggleGameMenu();
