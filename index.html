@@ -1350,10 +1350,11 @@
         const START_MAX_SEEDS = 6;
         const STORAGE_KEY = "colorwars-duel-state-v4";
         const SETTINGS_KEY = "colorwars-duel-settings-v1";
-        // Bump APP_VERSION together with the vNN suffix of CACHE_NAME in sw.js on
-        // every release, and set BUILD_DATE to the release moment (UTC, shown in МСК).
-        const APP_VERSION = "v25";
-        const BUILD_DATE = "2026-07-06T20:10:00Z";
+        // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
+        // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
+        // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
+        const APP_VERSION = "v26";
+        const BUILD_DATE = "2026-07-06T20:19:23Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;

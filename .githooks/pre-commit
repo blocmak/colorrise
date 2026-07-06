@@ -1,0 +1,32 @@
+#!/bin/sh
+# Auto-bump the app version (vNN) and BUILD_DATE on every commit.
+#
+# Enable once per clone with:
+#   git config core.hooksPath .githooks
+#
+# On each commit this increments APP_VERSION in index.html, the matching vNN
+# suffix of CACHE_NAME in sw.js, and sets BUILD_DATE (UTC) to the commit moment.
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+INDEX="$ROOT/index.html"
+SW="$ROOT/sw.js"
+
+[ -f "$INDEX" ] || exit 0
+
+CURRENT="$(perl -ne 'if (/const APP_VERSION = "v(\d+)"/) { print $1; last; }' "$INDEX")"
+[ -n "$CURRENT" ] || exit 0
+
+NEXT=$((CURRENT + 1))
+NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+perl -i -pe "s/const APP_VERSION = \"v\d+\"/const APP_VERSION = \"v$NEXT\"/" "$INDEX"
+perl -i -pe "s/const BUILD_DATE = \"[^\"]*\"/const BUILD_DATE = \"$NOW\"/" "$INDEX"
+git add "$INDEX"
+
+if [ -f "$SW" ]; then
+    perl -i -pe "s/(CACHE_NAME = \"colorwars-duel-pwa-)v\d+\"/\${1}v$NEXT\"/" "$SW"
+    git add "$SW"
+fi
+
+exit 0
