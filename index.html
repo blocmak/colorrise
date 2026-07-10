@@ -256,7 +256,8 @@
             font-size: 0.88rem;
         }
 
-        .settings-field input {
+        .settings-field input,
+        .settings-field select {
             width: 100%;
             padding: 12px 14px;
             border: 1px solid rgba(255, 255, 255, 0.14);
@@ -264,6 +265,15 @@
             background: rgba(255, 255, 255, 0.08);
             color: var(--text);
             font: inherit;
+        }
+
+        .settings-field select {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .settings-field select option {
+            color: #0d1020;
         }
 
         .dialog-actions {
@@ -715,6 +725,36 @@
 
         .dropdown-item:disabled {
             opacity: 0.42;
+        }
+
+        .dropdown-field {
+            display: grid;
+            gap: 6px;
+            padding: 4px 4px 10px;
+            text-align: left;
+        }
+
+        .dropdown-field span {
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 750;
+            letter-spacing: 0.02em;
+        }
+
+        .dropdown-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            background: #252e46;
+            color: var(--text);
+            font: inherit;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .dropdown-field select option {
+            color: #0d1020;
         }
 
         .palette-panel {
@@ -1187,7 +1227,7 @@
                 <p class="eyebrow">PWA duel prototype</p>
                 <h1 id="menu-title">ColorRise</h1>
                 <p>Захватывай цветные плитки, окружай области и первым забери больше половины поля.</p>
-                <div class="build-info">Сборка: 2026-06-26 23:43:36 UTC · Версия: colorwars-duel-pwa-v24</div>
+                <div class="build-info" id="buildInfo">Сборка: — · Версия: —</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
@@ -1219,6 +1259,15 @@
                     </button>
                     <div class="game-dropdown" id="gameDropdown" role="menu" aria-label="Меню игры">
                         <div class="game-dropdown-title">COLORRISE</div>
+                        <label class="dropdown-field" for="gameDifficultyInput">
+                            <span>Сложность соперника</span>
+                            <select id="gameDifficultyInput" aria-label="Сложность соперника">
+                                <option value="1">1. Легко</option>
+                                <option value="2">2. Нормально</option>
+                                <option value="3">3. Сложно</option>
+                                <option value="4">4. Невозможно</option>
+                            </select>
+                        </label>
                         <button class="dropdown-item" id="restartButton" type="button" role="menuitem">Начать сначала</button>
                         <button class="dropdown-item" id="newGameButton" type="button" role="menuitem">Новая игра</button>
                         <button class="dropdown-item" id="backToMenuButton" type="button" role="menuitem">Меню</button>
@@ -1242,6 +1291,16 @@
                     Количество плиток по вертикали
                     <span>Минимум 6.</span>
                     <input id="boardHeightInput" type="number" min="6" step="1" inputmode="numeric">
+                </label>
+                <label class="settings-field" for="difficultyInput">
+                    Сложность соперника
+                    <span>Чем выше уровень, тем глубже робот просчитывает ходы.</span>
+                    <select id="difficultyInput">
+                        <option value="1">1. Легко</option>
+                        <option value="2">2. Нормально</option>
+                        <option value="3">3. Сложно</option>
+                        <option value="4">4. Невозможно</option>
+                    </select>
                 </label>
             </div>
             <div class="dialog-actions">
@@ -1291,6 +1350,26 @@
         const START_MAX_SEEDS = 6;
         const STORAGE_KEY = "colorwars-duel-state-v4";
         const SETTINGS_KEY = "colorwars-duel-settings-v1";
+        // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
+        // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
+        // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
+        const APP_VERSION = "v26";
+        const BUILD_DATE = "2026-07-06T20:19:23Z";
+        const DEFAULT_DIFFICULTY = 1;
+        const MIN_DIFFICULTY = 1;
+        const MAX_DIFFICULTY = 4;
+        const DIFFICULTIES = [
+            { id: 1, name: "Легко", note: "Жадный ход на 1 шаг вперёд." },
+            { id: 2, name: "Нормально", note: "Просчёт на 2 хода вперёд." },
+            { id: 3, name: "Сложно", note: "Просчёт на 4 хода: учитывает крупные захваты обеих сторон." },
+            { id: 4, name: "Невозможно", note: "Максимальная глубина планирования по бюджету времени." }
+        ];
+        const AI_SEARCH = {
+            2: { maxDepth: 2, timeBudgetMs: 200 },
+            3: { maxDepth: 4, timeBudgetMs: 500 },
+            4: { maxDepth: 24, timeBudgetMs: 900 }
+        };
+        const AI_WIN_SCORE = 1e6;
         const COLORS = [
             { name: "Жёлтый", value: "#f5f45e" },
             { name: "Синий", value: "#0101ff" },
@@ -1326,6 +1405,8 @@
         const rulesDialogEl = document.getElementById("rulesDialog");
         const boardWidthInput = document.getElementById("boardWidthInput");
         const boardHeightInput = document.getElementById("boardHeightInput");
+        const difficultyInput = document.getElementById("difficultyInput");
+        const gameDifficultyInput = document.getElementById("gameDifficultyInput");
         const settingsCloseButton = document.getElementById("settingsCloseButton");
         const settingsSaveButton = document.getElementById("settingsSaveButton");
         const rulesCloseButton = document.getElementById("rulesCloseButton");
@@ -1350,10 +1431,12 @@
         const endgameReplayButton = document.getElementById("endgameReplayButton");
         const endgameMenuButton = document.getElementById("endgameMenuButton");
         const installHintEl = document.getElementById("installHint");
+        const buildInfoEl = document.getElementById("buildInfo");
 
         let boardWidth = DEFAULT_BOARD_WIDTH;
         let boardHeight = DEFAULT_BOARD_HEIGHT;
         let customBoardSize = false;
+        let difficulty = DEFAULT_DIFFICULTY;
         let cells = [];
         let initialSnapshot = null;
         let history = [];
@@ -1383,6 +1466,14 @@
                 color = randomColorIndex();
             }
             return color;
+        }
+
+        function clampDifficulty(value) {
+            const parsed = Number.parseInt(value, 10);
+            if (!Number.isFinite(parsed)) {
+                return DEFAULT_DIFFICULTY;
+            }
+            return Math.min(MAX_DIFFICULTY, Math.max(MIN_DIFFICULTY, parsed));
         }
 
         function clampDimension(value, fallback) {
@@ -1445,26 +1536,43 @@
                 const saved = JSON.parse(raw);
                 boardWidth = clampDimension(saved.boardWidth, DEFAULT_BOARD_WIDTH);
                 boardHeight = clampDimension(saved.boardHeight, DEFAULT_BOARD_HEIGHT);
+                difficulty = clampDifficulty(saved.difficulty);
                 customBoardSize = true;
             } catch (error) {
                 boardWidth = DEFAULT_BOARD_WIDTH;
                 boardHeight = DEFAULT_BOARD_HEIGHT;
+                difficulty = DEFAULT_DIFFICULTY;
                 customBoardSize = false;
             }
         }
 
         function saveSettings() {
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ boardWidth, boardHeight }));
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify({ boardWidth, boardHeight, difficulty }));
         }
 
         function syncSettingsInputs() {
             boardWidthInput.value = String(boardWidth);
             boardHeightInput.value = String(boardHeight);
+            if (difficultyInput) {
+                difficultyInput.value = String(difficulty);
+            }
+            if (gameDifficultyInput) {
+                gameDifficultyInput.value = String(difficulty);
+            }
+        }
+
+        function changeDifficulty(value) {
+            difficulty = clampDifficulty(value);
+            syncSettingsInputs();
+            saveSettings();
         }
 
         function saveSettingsFromInputs() {
             boardWidth = clampDimension(boardWidthInput.value, DEFAULT_BOARD_WIDTH);
             boardHeight = clampDimension(boardHeightInput.value, DEFAULT_BOARD_HEIGHT);
+            if (difficultyInput) {
+                difficulty = clampDifficulty(difficultyInput.value);
+            }
             customBoardSize = true;
             syncSettingsInputs();
             saveSettings();
@@ -1997,7 +2105,7 @@
             return result;
         }
 
-        function chooseComputerColor() {
+        function chooseComputerColorGreedy() {
             const legal = legalColorsFor(1);
             let bestColor = legal[0];
             let bestScore = -Infinity;
@@ -2029,6 +2137,148 @@
             });
 
             return bestColor;
+        }
+
+        let aiDeadline = Infinity;
+        let aiAbort = false;
+        let aiNodeBudgetCheck = 0;
+
+        function aiTimeUp() {
+            if (aiAbort) {
+                return true;
+            }
+            if ((++aiNodeBudgetCheck & 511) === 0 && performance.now() >= aiDeadline) {
+                aiAbort = true;
+            }
+            return aiAbort;
+        }
+
+        function evaluateForComputer(source, counts) {
+            let reachHuman = 0;
+            let reachComputer = 0;
+
+            source.forEach((cell) => {
+                if (cell.owner !== -1) {
+                    return;
+                }
+                let nearHuman = false;
+                let nearComputer = false;
+                forEachNeighbor(cell.x, cell.y, (nx, ny) => {
+                    const owner = source[indexOf(nx, ny)].owner;
+                    if (owner === 0) {
+                        nearHuman = true;
+                    } else if (owner === 1) {
+                        nearComputer = true;
+                    }
+                });
+                if (nearHuman) {
+                    reachHuman += 1;
+                }
+                if (nearComputer) {
+                    reachComputer += 1;
+                }
+            });
+
+            return (counts[1] - counts[0]) * 10 + (reachComputer - reachHuman);
+        }
+
+        function negamax(source, player, depth, alpha, beta, ply) {
+            if (aiTimeUp()) {
+                return 0;
+            }
+
+            const counts = territoryCounts(source);
+            const threshold = Math.floor(source.length / 2) + 1;
+            const sign = player === 1 ? 1 : -1;
+
+            if (counts[1] >= threshold) {
+                return sign * (AI_WIN_SCORE - ply);
+            }
+            if (counts[0] >= threshold) {
+                return sign * (-AI_WIN_SCORE + ply);
+            }
+            if (depth === 0) {
+                return sign * evaluateForComputer(source, counts);
+            }
+
+            const children = legalColorsFor(player, source).map((colorIndex) => {
+                const result = simulateMove(player, colorIndex, source);
+                return { cells: result.nextCells, gained: result.gained };
+            });
+            children.sort((a, b) => b.gained - a.gained);
+
+            let best = -Infinity;
+            for (const child of children) {
+                const value = -negamax(child.cells, opponentOf(player), depth - 1, -beta, -alpha, ply + 1);
+                if (aiAbort) {
+                    return best === -Infinity ? 0 : best;
+                }
+                if (value > best) {
+                    best = value;
+                }
+                if (best > alpha) {
+                    alpha = best;
+                }
+                if (alpha >= beta) {
+                    break;
+                }
+            }
+            return best;
+        }
+
+        function searchRoot(depth) {
+            const children = legalColorsFor(1).map((colorIndex) => {
+                const result = simulateMove(1, colorIndex);
+                return { colorIndex, cells: result.nextCells, gained: result.gained };
+            });
+            children.sort((a, b) => b.gained - a.gained);
+
+            let bestColor = children[0].colorIndex;
+            let bestValue = -Infinity;
+            let alpha = -Infinity;
+
+            for (const child of children) {
+                const value = -negamax(child.cells, 0, depth - 1, -Infinity, -alpha, 1);
+                if (aiAbort) {
+                    break;
+                }
+                if (value > bestValue) {
+                    bestValue = value;
+                    bestColor = child.colorIndex;
+                }
+                if (value > alpha) {
+                    alpha = value;
+                }
+            }
+
+            return { color: bestColor, value: bestValue, completed: !aiAbort };
+        }
+
+        function chooseComputerColorSearch(maxDepth, timeBudgetMs) {
+            aiAbort = false;
+            aiNodeBudgetCheck = 0;
+            aiDeadline = timeBudgetMs > 0 ? performance.now() + timeBudgetMs : Infinity;
+
+            let bestColor = legalColorsFor(1)[0];
+            for (let depth = 1; depth <= maxDepth; depth++) {
+                const result = searchRoot(depth);
+                if (!result.completed) {
+                    break;
+                }
+                bestColor = result.color;
+                if (Math.abs(result.value) >= AI_WIN_SCORE - 1000) {
+                    break;
+                }
+            }
+            return bestColor;
+        }
+
+        function chooseComputerColor() {
+            const config = AI_SEARCH[difficulty];
+            if (!config) {
+                return chooseComputerColorGreedy();
+            }
+            return chooseComputerColorSearch(config.maxDepth, config.timeBudgetMs);
         }
 
         function finishIfNeeded() {
@@ -2451,6 +2701,29 @@
             }
         }
 
+        function formatBuildDate(iso) {
+            const date = new Date(iso);
+            if (Number.isNaN(date.getTime())) {
+                return iso;
+            }
+            return new Intl.DateTimeFormat("ru-RU", {
+                timeZone: "Europe/Moscow",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            }).format(date);
+        }
+
+        function renderBuildInfo() {
+            if (!buildInfoEl) {
+                return;
+            }
+            buildInfoEl.textContent = `Сборка: ${formatBuildDate(BUILD_DATE)} МСК · Версия: ${APP_VERSION}`;
+        }
+
         function registerServiceWorker() {
             if (!("serviceWorker" in navigator)) {
                 if (installHintEl) {
@@ -2475,6 +2748,7 @@
         }
 
         function init() {
+            renderBuildInfo();
             loadSettings();
             applyAutoBoardDimensions();
             syncSettingsInputs();
@@ -2489,6 +2763,11 @@
             settingsCloseButton.addEventListener("click", () => closeDialog(settingsDialogEl));
             settingsSaveButton.addEventListener("click", saveSettingsFromInputs);
             rulesCloseButton.addEventListener("click", () => closeDialog(rulesDialogEl));
+            if (gameDifficultyInput) {
+                gameDifficultyInput.addEventListener("change", () => {
+                    changeDifficulty(gameDifficultyInput.value);
+                });
+            }
             gameMenuButton.addEventListener("click", (event) => {
                 event.stopPropagation();
                 toggleGameMenu();
