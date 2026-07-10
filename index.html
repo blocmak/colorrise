@@ -1355,8 +1355,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v27";
-        const BUILD_DATE = "2026-07-10T15:55:00Z";
+        const APP_VERSION = "v28";
+        const BUILD_DATE = "2026-07-10T16:05:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -1450,6 +1450,7 @@
         let winnerId = null;
         let aiThinking = false;
         let aiTurnId = 0;
+        let suppressMenuToggleUntil = 0;
 
         let renderedOwners = [];
         let renderedColors = [];
@@ -1570,6 +1571,11 @@
             syncSettingsInputs();
             saveSettings();
             closeGameMenu();
+            // Native <select> can emit a follow-up click on the hamburger and reopen the menu.
+            suppressMenuToggleUntil = performance.now() + 400;
+            if (gameDifficultyInput) {
+                gameDifficultyInput.blur();
+            }
         }
 
         function saveSettingsFromInputs() {
@@ -2808,9 +2814,15 @@
                 gameDifficultyInput.addEventListener("change", () => {
                     changeDifficulty(gameDifficultyInput.value);
                 });
+                gameDifficultyInput.addEventListener("input", () => {
+                    changeDifficulty(gameDifficultyInput.value);
+                });
             }
             gameMenuButton.addEventListener("click", (event) => {
                 event.stopPropagation();
+                if (performance.now() < suppressMenuToggleUntil) {
+                    return;
+                }
                 toggleGameMenu();
             });
             document.addEventListener("click", (event) => {
