@@ -1268,7 +1268,7 @@
                                 <option value="4">Невозможно</option>
                             </select>
                         </label>
-                        <button class="dropdown-item" id="swapPlayersButton" type="button" role="menuitem">Поменяться</button>
+                        <button class="dropdown-item" id="flipBoardButton" type="button" role="menuitem">Развернуть</button>
                         <button class="dropdown-item" id="undoButton" type="button" role="menuitem">Ход назад</button>
                         <button class="dropdown-item" id="restartButton" type="button" role="menuitem">Начать сначала</button>
                         <button class="dropdown-item" id="newGameButton" type="button" role="menuitem">Новая игра</button>
@@ -1355,8 +1355,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v28";
-        const BUILD_DATE = "2026-07-10T16:05:00Z";
+        const APP_VERSION = "v29";
+        const BUILD_DATE = "2026-07-14T05:56:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -1423,7 +1423,7 @@
         const gameMenuEl = document.getElementById("gameMenu");
         const gameMenuButton = document.getElementById("gameMenuButton");
         const backToMenuButton = document.getElementById("backToMenuButton");
-        const swapPlayersButton = document.getElementById("swapPlayersButton");
+        const flipBoardButton = document.getElementById("flipBoardButton");
         const undoButton = document.getElementById("undoButton");
         const restartButton = document.getElementById("restartButton");
         const newGameButton = document.getElementById("newGameButton");
@@ -2365,7 +2365,7 @@
             finishIfNeeded();
         }
 
-        function swapPlayers() {
+        function flipBoard() {
             if (gameOver || !initialSnapshot || !cells.length) {
                 return;
             }
@@ -2375,21 +2375,29 @@
             aiThinking = false;
             history.push(makeSnapshot());
 
+            const nextCells = new Array(cells.length);
             cells.forEach((cell) => {
-                if (cell.owner === 0) {
-                    cell.owner = 1;
-                } else if (cell.owner === 1) {
-                    cell.owner = 0;
+                const nextX = boardWidth - 1 - cell.x;
+                const nextY = boardHeight - 1 - cell.y;
+                let owner = cell.owner;
+                if (owner === 0) {
+                    owner = 1;
+                } else if (owner === 1) {
+                    owner = 0;
                 }
+                nextCells[indexOf(nextX, nextY)] = {
+                    x: nextX,
+                    y: nextY,
+                    color: cell.color,
+                    owner
+                };
             });
 
-            currentPlayer = 1;
+            cells = nextCells;
+            currentPlayer = 0;
             saveGame();
             render();
-
-            if (!finishIfNeeded()) {
-                runComputerTurn();
-            }
+            finishIfNeeded();
         }
 
         function undoMove() {
@@ -2664,7 +2672,7 @@
         }
 
         function renderStatus() {
-            swapPlayersButton.disabled = gameOver || !initialSnapshot || !cells.length;
+            flipBoardButton.disabled = gameOver || !initialSnapshot || !cells.length;
             undoButton.disabled = !history.length;
             restartButton.disabled = !initialSnapshot;
             newGameButton.disabled = false;
@@ -2836,7 +2844,7 @@
                 }
             });
             window.addEventListener("resize", updateBoardSize);
-            swapPlayersButton.addEventListener("click", swapPlayers);
+            flipBoardButton.addEventListener("click", flipBoard);
             undoButton.addEventListener("click", undoMove);
             backToMenuButton.addEventListener("click", showStartScreen);
             restartButton.addEventListener("click", restartSameField);
