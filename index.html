@@ -634,7 +634,7 @@
             background: transparent;
             color: #000000;
             font-weight: 900;
-            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-size: clamp(1.2rem, 4.2vw, 1.55rem);
             letter-spacing: -0.02em;
             line-height: 1;
             overflow: visible;
@@ -1312,11 +1312,11 @@
 
             <footer class="bottom-bar" aria-label="Управление игрой">
                 <button class="undo-step-btn" id="undoStepButton" type="button" aria-label="Ход назад">
-                    <svg class="undo-step-arrow" viewBox="0 0 72 40" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                        <!-- Infographic arrow mirrored left: tip + body with V-notch + two trailing chevrons -->
-                        <path d="M2 20 L16 6 L48 6 L40 20 L48 34 L16 34 Z"></path>
-                        <path d="M54 6 L46 20 L54 34 L60 34 L52 20 L60 6 Z"></path>
-                        <path d="M66 6 L58 20 L66 34 L72 34 L64 20 L72 6 Z"></path>
+                    <svg class="undo-step-arrow" viewBox="0 0 72 40" preserveAspectRatio="none" aria-hidden="true">
+                        <!-- Full-height infographic arrow: matches color-button band -->
+                        <path d="M2 20 L16 1 L48 1 L40 20 L48 39 L16 39 Z"></path>
+                        <path d="M54 1 L46 20 L54 39 L60 39 L52 20 L60 1 Z"></path>
+                        <path d="M66 1 L58 20 L66 39 L72 39 L64 20 L72 1 Z"></path>
                     </svg>
                     <span class="undo-step-count" id="undoStepCount">0</span>
                 </button>
@@ -1424,8 +1424,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v37";
-        const BUILD_DATE = "2026-07-21T22:00:00Z";
+        const APP_VERSION = "v38";
+        const BUILD_DATE = "2026-07-21T22:07:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
