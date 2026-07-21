@@ -612,6 +612,7 @@
             border-radius: 16px;
             background: rgba(18, 24, 45, 0.88);
             box-shadow: var(--shadow);
+            overflow: visible;
             /* backdrop-filter: blur(18px); */
         }
 
@@ -627,7 +628,7 @@
             width: clamp(46px, 11vw, 58px);
             height: 100%;
             min-height: 42px;
-            border: 2px solid #ffffff;
+            border: 0;
             border-radius: 12px;
             background: #263049;
             color: #ffffff;
@@ -635,35 +636,33 @@
             font-size: clamp(0.95rem, 3.2vw, 1.15rem);
             letter-spacing: -0.02em;
             line-height: 1;
+            overflow: visible;
             transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
         }
 
-        .undo-step-btn::before,
-        .undo-step-btn::after {
-            content: "";
+        .undo-step-frame {
             position: absolute;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-style: solid;
+            inset: 4px;
+            width: auto;
+            height: auto;
             pointer-events: none;
+            overflow: visible;
+        }
+
+        .undo-step-frame rect {
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 2.25;
+        }
+
+        .undo-step-frame .undo-arrow {
+            fill: #ffffff;
+            stroke: none;
+        }
+
+        .undo-step-count {
+            position: relative;
             z-index: 1;
-        }
-
-        /* Top arrow on the perimeter, pointing left (counterclockwise). */
-        .undo-step-btn::before {
-            top: -2px;
-            transform: translate(-50%, -50%);
-            border-width: 5px 8px 5px 0;
-            border-color: transparent #ffffff transparent transparent;
-        }
-
-        /* Bottom arrow on the perimeter, pointing right (counterclockwise). */
-        .undo-step-btn::after {
-            bottom: -2px;
-            transform: translate(-50%, 50%);
-            border-width: 5px 0 5px 8px;
-            border-color: transparent transparent transparent #ffffff;
         }
 
         .undo-step-btn:hover:not(:disabled),
@@ -1312,7 +1311,16 @@
             </section>
 
             <footer class="bottom-bar" aria-label="Управление игрой">
-                <button class="undo-step-btn" id="undoStepButton" type="button" aria-label="Ход назад">0</button>
+                <button class="undo-step-btn" id="undoStepButton" type="button" aria-label="Ход назад">
+                    <svg class="undo-step-frame" viewBox="0 0 40 40" aria-hidden="true">
+                        <rect x="2" y="2" width="36" height="36" rx="8" ry="8"></rect>
+                        <!-- Top arrow on the perimeter, pointing left -->
+                        <polygon class="undo-arrow" points="13,2 22,-1.5 22,5.5"></polygon>
+                        <!-- Bottom arrow on the perimeter, pointing right -->
+                        <polygon class="undo-arrow" points="27,38 18,34.5 18,41.5"></polygon>
+                    </svg>
+                    <span class="undo-step-count" id="undoStepCount">0</span>
+                </button>
                 <div class="palette" id="palette" aria-label="Доступные цвета"></div>
                 <div class="game-menu" id="gameMenu">
                     <button class="hamburger-btn" id="gameMenuButton" type="button" aria-label="Открыть меню" aria-controls="gameDropdown" aria-expanded="false">
@@ -1417,8 +1425,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v31";
-        const BUILD_DATE = "2026-07-21T19:59:00Z";
+        const APP_VERSION = "v32";
+        const BUILD_DATE = "2026-07-21T20:05:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -1479,6 +1487,7 @@
         const gameFieldEl = document.getElementById("gameField");
         const paletteEl = document.getElementById("palette");
         const undoStepButton = document.getElementById("undoStepButton");
+        const undoStepCountEl = document.getElementById("undoStepCount");
         const humanScoreBar = document.getElementById("humanScoreBar");
         const computerScoreBar = document.getElementById("computerScoreBar");
         const humanScoreLabel = document.getElementById("humanScoreLabel");
@@ -2749,7 +2758,9 @@
             flipBoardButton.disabled = gameOver || !initialSnapshot || !cells.length;
             undoButton.disabled = !canUndo;
             undoStepButton.disabled = !canUndo;
-            undoStepButton.textContent = String(moveCount);
+            if (undoStepCountEl) {
+                undoStepCountEl.textContent = String(moveCount);
+            }
             undoStepButton.setAttribute("aria-label", `Ход назад. Сделано ходов: ${moveCount}`);
             endgameUndoButton.disabled = !canUndo;
             restartButton.disabled = !initialSnapshot;
