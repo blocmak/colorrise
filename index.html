@@ -627,41 +627,43 @@
             width: clamp(46px, 11vw, 58px);
             height: 100%;
             min-height: 42px;
+            border: 2px solid #ffffff;
             border-radius: 12px;
             background: #263049;
+            color: #ffffff;
             font-weight: 900;
             font-size: clamp(0.95rem, 3.2vw, 1.15rem);
             letter-spacing: -0.02em;
             line-height: 1;
-            padding-top: 4px;
             transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
         }
 
-        .undo-step-btn::before {
-            content: "";
-            position: absolute;
-            top: 7px;
-            left: 8px;
-            width: 12px;
-            height: 12px;
-            border: 2.5px solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            transform: rotate(-45deg);
-            opacity: 0.72;
-            pointer-events: none;
-        }
-
+        .undo-step-btn::before,
         .undo-step-btn::after {
             content: "";
             position: absolute;
-            top: 5px;
-            left: 7px;
+            left: 50%;
+            width: 0;
+            height: 0;
             border-style: solid;
-            border-width: 0 0 5px 5px;
-            border-color: transparent transparent currentColor transparent;
-            opacity: 0.72;
             pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Top arrow on the perimeter, pointing left (counterclockwise). */
+        .undo-step-btn::before {
+            top: -2px;
+            transform: translate(-50%, -50%);
+            border-width: 5px 8px 5px 0;
+            border-color: transparent #ffffff transparent transparent;
+        }
+
+        /* Bottom arrow on the perimeter, pointing right (counterclockwise). */
+        .undo-step-btn::after {
+            bottom: -2px;
+            transform: translate(-50%, 50%);
+            border-width: 5px 0 5px 8px;
+            border-color: transparent transparent transparent #ffffff;
         }
 
         .undo-step-btn:hover:not(:disabled),
@@ -1415,8 +1417,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v30";
-        const BUILD_DATE = "2026-07-21T17:22:00Z";
+        const APP_VERSION = "v31";
+        const BUILD_DATE = "2026-07-21T19:59:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
