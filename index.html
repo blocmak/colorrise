@@ -657,7 +657,7 @@
             position: relative;
             z-index: 1;
             color: #000000;
-            padding-left: 12%;
+            padding-left: 8%;
         }
 
         .undo-step-btn:hover:not(:disabled),
@@ -1312,8 +1312,8 @@
             <footer class="bottom-bar" aria-label="Управление игрой">
                 <button class="undo-step-btn" id="undoStepButton" type="button" aria-label="Ход назад">
                     <svg class="undo-step-arrow" viewBox="0 0 56 40" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                        <!-- Thick left arrow; body height matches color-button band -->
-                        <path d="M22 4 L4 20 L22 36 L22 29 L52 29 L52 11 L22 11 Z"></path>
+                        <!-- Pencil silhouette pointing left, with a blunt truncated tip -->
+                        <path d="M50 11 L20 11 L10 15 L6 17 L6 23 L10 25 L20 29 L50 29 Z"></path>
                     </svg>
                     <span class="undo-step-count" id="undoStepCount">0</span>
                 </button>
@@ -1421,8 +1421,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v35";
-        const BUILD_DATE = "2026-07-21T20:42:00Z";
+        const APP_VERSION = "v36";
+        const BUILD_DATE = "2026-07-21T20:53:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
