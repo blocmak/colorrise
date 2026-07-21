@@ -603,7 +603,7 @@
         .bottom-bar {
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-columns: auto minmax(0, 1fr) auto;
             align-items: stretch;
             gap: clamp(6px, 1.5vw, 10px);
             min-height: 0;
@@ -618,6 +618,63 @@
         .bottom-bar .palette {
             align-items: stretch;
             height: 100%;
+        }
+
+        .undo-step-btn {
+            position: relative;
+            display: inline-grid;
+            place-items: center;
+            width: clamp(46px, 11vw, 58px);
+            aspect-ratio: 1;
+            height: 100%;
+            min-height: 42px;
+            border-radius: 12px;
+            background: #263049;
+            font-weight: 900;
+            font-size: clamp(0.95rem, 3.2vw, 1.15rem);
+            letter-spacing: -0.02em;
+            transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
+        }
+
+        .undo-step-btn::before {
+            content: "";
+            position: absolute;
+            top: 7px;
+            left: 8px;
+            width: 12px;
+            height: 12px;
+            border: 2.5px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            transform: rotate(-45deg);
+            opacity: 0.72;
+            pointer-events: none;
+        }
+
+        .undo-step-btn::after {
+            content: "";
+            position: absolute;
+            top: 5px;
+            left: 7px;
+            border-style: solid;
+            border-width: 0 0 5px 5px;
+            border-color: transparent transparent currentColor transparent;
+            opacity: 0.72;
+            pointer-events: none;
+        }
+
+        .undo-step-btn:hover:not(:disabled),
+        .undo-step-btn:focus-visible:not(:disabled) {
+            background: #34405f;
+            outline: none;
+        }
+
+        .undo-step-btn:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .undo-step-btn:disabled {
+            opacity: 0.42;
         }
 
         .game-menu {
@@ -1065,7 +1122,7 @@
 
         .endgame-actions {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-top: 20px;
         }
@@ -1252,6 +1309,7 @@
             </section>
 
             <footer class="bottom-bar" aria-label="Управление игрой">
+                <button class="undo-step-btn" id="undoStepButton" type="button" aria-label="Ход назад">0</button>
                 <div class="palette" id="palette" aria-label="Доступные цвета"></div>
                 <div class="game-menu" id="gameMenu">
                     <button class="hamburger-btn" id="gameMenuButton" type="button" aria-label="Открыть меню" aria-controls="gameDropdown" aria-expanded="false">
@@ -1338,6 +1396,7 @@
             <div class="endgame-actions">
                 <button class="action-btn primary" id="endgameNewGameButton" type="button">Новая игра</button>
                 <button class="action-btn" id="endgameReplayButton" type="button">Переиграть</button>
+                <button class="action-btn" id="endgameUndoButton" type="button">Шаг назад</button>
                 <button class="action-btn" id="endgameMenuButton" type="button">Меню</button>
             </div>
         </div>
@@ -1355,8 +1414,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v29";
-        const BUILD_DATE = "2026-07-14T05:56:00Z";
+        const APP_VERSION = "v30";
+        const BUILD_DATE = "2026-07-21T17:22:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -1416,6 +1475,7 @@
         const boardWrapEl = document.getElementById("boardWrap");
         const gameFieldEl = document.getElementById("gameField");
         const paletteEl = document.getElementById("palette");
+        const undoStepButton = document.getElementById("undoStepButton");
         const humanScoreBar = document.getElementById("humanScoreBar");
         const computerScoreBar = document.getElementById("computerScoreBar");
         const humanScoreLabel = document.getElementById("humanScoreLabel");
@@ -1433,6 +1493,7 @@
         const endgameTextEl = document.getElementById("endgameText");
         const endgameNewGameButton = document.getElementById("endgameNewGameButton");
         const endgameReplayButton = document.getElementById("endgameReplayButton");
+        const endgameUndoButton = document.getElementById("endgameUndoButton");
         const endgameMenuButton = document.getElementById("endgameMenuButton");
         const installHintEl = document.getElementById("installHint");
         const buildInfoEl = document.getElementById("buildInfo");
@@ -1446,6 +1507,7 @@
         let history = [];
         let currentPlayer = 0;
         let moveNumber = 1;
+        let moveCount = 0;
         let gameOver = false;
         let winnerId = null;
         let aiThinking = false;
@@ -1660,6 +1722,7 @@
                 cells: snapshot.cells.map((cell) => ({ ...cell })),
                 currentPlayer: snapshot.currentPlayer,
                 moveNumber: snapshot.moveNumber,
+                moveCount: snapshot.moveCount,
                 gameOver: snapshot.gameOver,
                 winnerId: snapshot.winnerId
             };
@@ -1672,6 +1735,7 @@
                 cells: cloneCells(),
                 currentPlayer,
                 moveNumber,
+                moveCount,
                 gameOver,
                 winnerId
             };
@@ -1684,6 +1748,7 @@
             cells = restored.cells;
             currentPlayer = restored.currentPlayer;
             moveNumber = restored.moveNumber;
+            moveCount = Math.max(0, Number(restored.moveCount) || 0);
             gameOver = restored.gameOver;
             winnerId = restored.winnerId;
             aiThinking = false;
@@ -1804,6 +1869,7 @@
                 history,
                 currentPlayer,
                 moveNumber,
+                moveCount,
                 gameOver,
                 winnerId
             });
@@ -1853,6 +1919,7 @@
                 cells: snapshot.cells.map((cell) => ({ ...cell })),
                 currentPlayer: snapshot.currentPlayer === 1 ? 1 : 0,
                 moveNumber: Math.max(1, Number(snapshot.moveNumber) || 1),
+                moveCount: Math.max(0, Number(snapshot.moveCount) || 0),
                 gameOver: Boolean(snapshot.gameOver),
                 winnerId: snapshot.winnerId === 0 || snapshot.winnerId === 1 ? snapshot.winnerId : null
             };
@@ -1878,6 +1945,7 @@
                     : [];
                 currentPlayer = saved.currentPlayer === 1 ? 1 : 0;
                 moveNumber = Math.max(1, Number(saved.moveNumber) || 1);
+                moveCount = Math.max(0, Number(saved.moveCount) || Math.max(0, history.length));
                 gameOver = Boolean(saved.gameOver);
                 winnerId = saved.winnerId === 0 || saved.winnerId === 1 ? saved.winnerId : null;
 
@@ -2332,6 +2400,7 @@
             applyMove(0, colorIndex);
             currentPlayer = 1;
             moveNumber += 1;
+            moveCount += 1;
             saveGame();
             render();
 
@@ -2435,6 +2504,7 @@
             cells = createBoard();
             currentPlayer = 0;
             moveNumber = 1;
+            moveCount = 0;
             gameOver = false;
             winnerId = null;
             aiThinking = false;
@@ -2672,8 +2742,13 @@
         }
 
         function renderStatus() {
+            const canUndo = history.length > 0;
             flipBoardButton.disabled = gameOver || !initialSnapshot || !cells.length;
-            undoButton.disabled = !history.length;
+            undoButton.disabled = !canUndo;
+            undoStepButton.disabled = !canUndo;
+            undoStepButton.textContent = String(moveCount);
+            undoStepButton.setAttribute("aria-label", `Ход назад. Сделано ходов: ${moveCount}`);
+            endgameUndoButton.disabled = !canUndo;
             restartButton.disabled = !initialSnapshot;
             newGameButton.disabled = false;
             backToMenuButton.disabled = false;
@@ -2846,11 +2921,13 @@
             window.addEventListener("resize", updateBoardSize);
             flipBoardButton.addEventListener("click", flipBoard);
             undoButton.addEventListener("click", undoMove);
+            undoStepButton.addEventListener("click", undoMove);
             backToMenuButton.addEventListener("click", showStartScreen);
             restartButton.addEventListener("click", restartSameField);
             newGameButton.addEventListener("click", startNewGame);
             endgameNewGameButton.addEventListener("click", startNewGame);
             endgameReplayButton.addEventListener("click", restartSameField);
+            endgameUndoButton.addEventListener("click", undoMove);
             endgameMenuButton.addEventListener("click", showStartScreen);
             registerServiceWorker();
         }
