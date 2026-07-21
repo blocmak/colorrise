@@ -625,60 +625,45 @@
             position: relative;
             display: inline-grid;
             place-items: center;
-            width: clamp(46px, 11vw, 58px);
+            width: clamp(52px, 13vw, 68px);
             height: 100%;
             min-height: 42px;
+            padding: 0;
             border: 0;
-            border-radius: 12px;
-            background: #263049;
-            color: #ffffff;
+            border-radius: 0;
+            background: transparent;
+            color: #000000;
             font-weight: 900;
-            font-size: clamp(0.95rem, 3.2vw, 1.15rem);
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
             letter-spacing: -0.02em;
             line-height: 1;
             overflow: visible;
-            transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
+            transition: transform 120ms ease, opacity 120ms ease, filter 120ms ease;
         }
 
-        .undo-step-frame {
+        .undo-step-arrow {
             position: absolute;
-            inset: 3px;
-            width: auto;
-            height: auto;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
-            overflow: visible;
         }
 
-        .undo-step-frame rect:not(.undo-gap) {
-            fill: none;
-            stroke: #ffffff;
-            stroke-width: 2.5;
-        }
-
-        .undo-step-frame .undo-gap {
-            fill: #263049;
-            stroke: none;
-        }
-
-        .undo-step-btn:hover:not(:disabled) .undo-gap,
-        .undo-step-btn:focus-visible:not(:disabled) .undo-gap {
-            fill: #34405f;
-        }
-
-        .undo-step-frame .undo-arrow {
+        .undo-step-arrow path {
             fill: #ffffff;
-            stroke: none;
         }
 
         .undo-step-count {
             position: relative;
             z-index: 1;
+            color: #000000;
+            padding-left: 12%;
         }
 
         .undo-step-btn:hover:not(:disabled),
         .undo-step-btn:focus-visible:not(:disabled) {
-            background: #34405f;
             outline: none;
+            filter: brightness(0.92);
         }
 
         .undo-step-btn:active:not(:disabled) {
@@ -1322,15 +1307,9 @@
 
             <footer class="bottom-bar" aria-label="Управление игрой">
                 <button class="undo-step-btn" id="undoStepButton" type="button" aria-label="Ход назад">
-                    <svg class="undo-step-frame" viewBox="0 0 40 40" aria-hidden="true">
-                        <rect x="3" y="3" width="34" height="34" rx="7" ry="7"></rect>
-                        <!-- gap masks so arrows sit cleanly on the perimeter -->
-                        <rect class="undo-gap" x="13" y="1.5" width="14" height="3"></rect>
-                        <rect class="undo-gap" x="13" y="35.5" width="14" height="3"></rect>
-                        <!-- Top arrow on the perimeter, pointing left -->
-                        <polygon class="undo-arrow" points="12,3 26,0.6 26,5.4"></polygon>
-                        <!-- Bottom arrow on the perimeter, pointing right -->
-                        <polygon class="undo-arrow" points="28,37 14,34.6 14,39.4"></polygon>
+                    <svg class="undo-step-arrow" viewBox="0 0 56 40" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                        <!-- Thick left arrow; body height matches color-button band -->
+                        <path d="M22 4 L4 20 L22 36 L22 29 L52 29 L52 11 L22 11 Z"></path>
                     </svg>
                     <span class="undo-step-count" id="undoStepCount">0</span>
                 </button>
@@ -1438,8 +1417,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v33";
-        const BUILD_DATE = "2026-07-21T20:12:00Z";
+        const APP_VERSION = "v34";
+        const BUILD_DATE = "2026-07-21T20:36:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
