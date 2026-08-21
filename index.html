@@ -1585,6 +1585,7 @@
         const DEFAULT_BOARD_HEIGHT = 13;
         const TARGET_TILE_SIZE = 30;
         const MIN_BOARD_SIZE = 6;
+        const MAX_BOARD_SIZE = 40;
         const START_MIN_SEEDS = 2;
         const START_MAX_SEEDS = 6;
         const STORAGE_KEY = "colorwars-duel-state-v5";
@@ -1594,8 +1595,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v43";
-        const BUILD_DATE = "2026-08-21T14:42:00Z";
+        const APP_VERSION = "v44";
+        const BUILD_DATE = "2026-08-21T17:33:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -3048,10 +3049,13 @@
 
         function nearestGameColor(r, g, b) {
             const [hue, sat, val] = rgbToHsv(r, g, b);
-            if (val < 0.14 && sat < 0.4) {
+            if (val < 0.07) {
                 return -1;
             }
-            if (sat < 0.16 && val > 0.72) {
+            if (sat < 0.16 && val > 0.76) {
+                return -1;
+            }
+            if (sat < 0.12 && val < 0.2) {
                 return -1;
             }
 
@@ -3060,15 +3064,20 @@
             COLOR_RGB.forEach((rgb, index) => {
                 const [colorHue, colorSat, colorVal] = COLOR_HSV[index];
                 const rgbDist = (r - rgb[0]) ** 2 + (g - rgb[1]) ** 2 + (b - rgb[2]) ** 2;
-                const score = colorSat < 0.28
-                    ? rgbDist / 180 + Math.abs(sat - colorSat) * 260 + Math.abs(val - colorVal) * 140
-                    : hueDiff(hue, colorHue) * 6 + Math.abs(sat - colorSat) * 55 + Math.abs(val - colorVal) * 35 + rgbDist / 500;
+                let score;
+                if (colorSat < 0.28) {
+                    score = rgbDist / 180 + Math.abs(sat - colorSat) * 260 + Math.abs(val - colorVal) * 140;
+                } else if (hueDiff(hue, colorHue) < 28 && sat > 0.18) {
+                    score = hueDiff(hue, colorHue) * 3.2 + Math.abs(sat - colorSat) * 40 + Math.abs(val - colorVal) * 18 + rgbDist / 900;
+                } else {
+                    score = hueDiff(hue, colorHue) * 6 + Math.abs(sat - colorSat) * 55 + Math.abs(val - colorVal) * 35 + rgbDist / 500;
+                }
                 if (score < bestScore) {
                     bestScore = score;
                     best = index;
                 }
             });
-            return bestScore > 120 ? -1 : best;
+            return bestScore > 170 ? -1 : best;
         }
 
         function smoothSeries(values) {
@@ -3177,7 +3186,7 @@
         function cutsFromPitch(density, origin) {
             const pitch = autocorrelationPitch(density);
             const count = pitch > 0 ? Math.round(density.length / pitch) : 0;
-            if (pitch < 6 || count < MIN_BOARD_SIZE || count > 40) {
+            if (pitch < 6 || count < MIN_BOARD_SIZE || count > MAX_BOARD_SIZE) {
                 return [];
             }
             let bestPhase = 0;
@@ -3252,8 +3261,8 @@
             const boxH = y1 - y0;
             let best = null;
             let bestScore = -1;
-            for (let cols = MIN_BOARD_SIZE; cols <= 24; cols++) {
-                for (let rows = MIN_BOARD_SIZE; rows <= 24; rows++) {
+            for (let cols = MIN_BOARD_SIZE; cols <= MAX_BOARD_SIZE; cols++) {
+                for (let rows = MIN_BOARD_SIZE; rows <= MAX_BOARD_SIZE; rows++) {
                     const cellW = boxW / cols;
                     const cellH = boxH / rows;
                     const square = Math.abs(cellW - cellH) / Math.max(cellW, cellH, 1);
@@ -3287,8 +3296,159 @@
             return bestScore >= 0.62 ? best : null;
         }
 
+        function medianValue(values) {
+            if (!values.length) {
+                return 0;
+            }
+            const sorted = values.slice().sort((a, b) => a - b);
+            return sorted[Math.floor(sorted.length / 2)];
+        }
+
+        function clusterAxis(values, maxGap) {
+            if (!values.length) {
+                return [];
+            }
+            const sorted = values.slice().sort((a, b) => a - b);
+            const groups = [[sorted[0]]];
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] - sorted[i - 1] <= maxGap) {
+                    groups[groups.length - 1].push(sorted[i]);
+                } else {
+                    groups.push([sorted[i]]);
+                }
+            }
+            return groups.map((group) => group.reduce((sum, value) => sum + value, 0) / group.length);
+        }
+
+        function findTileBlobs(classified, width, height) {
+            const seen = new Uint8Array(width * height);
+            const blobs = [];
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const start = y * width + x;
+                    const color = classified[start];
+                    if (color < 0 || seen[start]) {
+                        continue;
+                    }
+                    let minX = x;
+                    let maxX = x;
+                    let minY = y;
+                    let maxY = y;
+                    let count = 0;
+                    const queue = [start];
+                    seen[start] = 1;
+                    for (let q = 0; q < queue.length; q++) {
+                        const index = queue[q];
+                        count += 1;
+                        const cx = index % width;
+                        const cy = (index / width) | 0;
+                        if (cx < minX) {
+                            minX = cx;
+                        }
+                        if (cx > maxX) {
+                            maxX = cx;
+                        }
+                        if (cy < minY) {
+                            minY = cy;
+                        }
+                        if (cy > maxY) {
+                            maxY = cy;
+                        }
+                        const neighbors = [index - 1, index + 1, index - width, index + width];
+                        neighbors.forEach((next) => {
+                            if (next < 0 || next >= classified.length || seen[next]) {
+                                return;
+                            }
+                            const nx = next % width;
+                            if ((index % width === 0 && nx === width - 1) || (index % width === width - 1 && nx === 0)) {
+                                return;
+                            }
+                            if (classified[next] !== color) {
+                                return;
+                            }
+                            seen[next] = 1;
+                            queue.push(next);
+                        });
+                    }
+                    blobs.push({
+                        minX,
+                        maxX,
+                        minY,
+                        maxY,
+                        bw: maxX - minX + 1,
+                        bh: maxY - minY + 1,
+                        count,
+                        color,
+                        cx: (minX + maxX) / 2,
+                        cy: (minY + maxY) / 2
+                    });
+                }
+            }
+            return blobs;
+        }
+
+        function selectBoardTiles(blobs) {
+            const squares = blobs.filter((blob) => {
+                const aspect = Math.abs(blob.bw - blob.bh) / Math.max(blob.bw, blob.bh, 1);
+                const fill = blob.count / Math.max(1, blob.bw * blob.bh);
+                return aspect < 0.5 && fill > 0.35 && blob.bw >= 4 && blob.bh >= 4 && blob.count >= 12;
+            });
+            if (squares.length < 8) {
+                return [];
+            }
+            const areas = squares.map((blob) => blob.bw * blob.bh);
+            const medianArea = medianValue(areas);
+            return squares.filter((blob) => {
+                const area = blob.bw * blob.bh;
+                return area > medianArea * 0.4 && area < medianArea * 2.4;
+            });
+        }
+
+        function gridFromTiles(tiles, classified, data, width, height) {
+            const tileSize = medianValue(tiles.map((tile) => (tile.bw + tile.bh) / 2));
+            if (tileSize < 4) {
+                return null;
+            }
+            const minX = Math.min(...tiles.map((tile) => tile.minX));
+            const maxX = Math.max(...tiles.map((tile) => tile.maxX));
+            const minY = Math.min(...tiles.map((tile) => tile.minY));
+            const maxY = Math.max(...tiles.map((tile) => tile.maxY));
+            const clusteredCols = clusterAxis(tiles.map((tile) => tile.cx), tileSize * 0.42);
+            const clusteredRows = clusterAxis(tiles.map((tile) => tile.cy), tileSize * 0.42);
+            const extentCols = Math.round((maxX - minX + 1) / tileSize);
+            const extentRows = Math.round((maxY - minY + 1) / tileSize);
+            const cols = Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE,
+                Math.abs(clusteredCols.length - extentCols) <= 2 ? clusteredCols.length : extentCols));
+            const rows = Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE,
+                Math.abs(clusteredRows.length - extentRows) <= 2 ? clusteredRows.length : extentRows));
+            if (cols < MIN_BOARD_SIZE || rows < MIN_BOARD_SIZE) {
+                return null;
+            }
+            const pad = tileSize * 0.08;
+            const left = minX - pad;
+            const top = minY - pad;
+            const cellW = (maxX - minX + 1 + pad * 2) / cols;
+            const cellH = (maxY - minY + 1 + pad * 2) / rows;
+            const colors = [];
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    colors.push(sampleCellColor(
+                        classified,
+                        data,
+                        width,
+                        height,
+                        left + col * cellW,
+                        left + (col + 1) * cellW,
+                        top + row * cellH,
+                        top + (row + 1) * cellH
+                    ));
+                }
+            }
+            return { boardWidth: cols, boardHeight: rows, colors };
+        }
+
         function reconstructBoardFromImage(image) {
-            const maxSide = 1200;
+            const maxSide = 1600;
             const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
             const width = Math.max(8, Math.round(image.width * scale));
             const height = Math.max(8, Math.round(image.height * scale));
@@ -3310,6 +3470,12 @@
                         rowHits[y] += 1;
                     }
                 }
+            }
+
+            const tiles = selectBoardTiles(findTileBlobs(classified, width, height));
+            const blobGrid = tiles.length >= 12 ? gridFromTiles(tiles, classified, data, width, height) : null;
+            if (blobGrid) {
+                return blobGrid;
             }
 
             const rowDensity = smoothSeries(rowHits.map((count) => count / width));
@@ -3336,7 +3502,7 @@
             }
 
             if (colCuts.length >= MIN_BOARD_SIZE && rowCuts.length >= MIN_BOARD_SIZE
-                && colCuts.length <= 40 && rowCuts.length <= 40) {
+                && colCuts.length <= MAX_BOARD_SIZE && rowCuts.length <= MAX_BOARD_SIZE) {
                 return {
                     boardWidth: colCuts.length,
                     boardHeight: rowCuts.length,
