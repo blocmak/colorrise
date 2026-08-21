@@ -1557,7 +1557,7 @@
     <div class="dialog-backdrop" id="screenshotDialog" role="dialog" aria-modal="true" aria-labelledby="screenshotTitle">
         <div class="dialog">
             <h2 id="screenshotTitle">Поле по скриншоту</h2>
-            <p>Выберите снимок игрового поля. Цвета плиток будут распознаны и карта восстановлена.</p>
+            <p>Нужен снимок, где видно <strong>всё игровое поле</strong>: все цветные плитки в кадре, без обрезанных рядов и без сильного наклона. Можно снимать весь экран игры — полоска счёта и палитра снизу допустимы. Лучше PNG или качественный JPEG, не фото экрана под углом.</p>
             <p class="dialog-error" id="screenshotError"></p>
             <div class="dialog-actions">
                 <button class="action-btn" id="screenshotCancelButton" type="button">Отмена</button>
@@ -1594,8 +1594,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v41";
-        const BUILD_DATE = "2026-08-21T12:35:00Z";
+        const APP_VERSION = "v42";
+        const BUILD_DATE = "2026-08-21T14:20:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -3015,25 +3015,60 @@
         }
 
         const COLOR_RGB = COLORS.map((color) => hexToRgb(color.value));
+        const COLOR_HSV = COLOR_RGB.map(([red, green, blue]) => rgbToHsv(red, green, blue));
+
+        function rgbToHsv(red, green, blue) {
+            const r = red / 255;
+            const g = green / 255;
+            const b = blue / 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const delta = max - min;
+            let hue = 0;
+            if (delta !== 0) {
+                if (max === r) {
+                    hue = ((g - b) / delta) % 6;
+                } else if (max === g) {
+                    hue = (b - r) / delta + 2;
+                } else {
+                    hue = (r - g) / delta + 4;
+                }
+                hue *= 60;
+                if (hue < 0) {
+                    hue += 360;
+                }
+            }
+            return [hue, max === 0 ? 0 : delta / max, max];
+        }
+
+        function hueDiff(left, right) {
+            const diff = Math.abs(left - right) % 360;
+            return diff > 180 ? 360 - diff : diff;
+        }
 
         function nearestGameColor(r, g, b) {
+            const [hue, sat, val] = rgbToHsv(r, g, b);
+            if (val < 0.14 && sat < 0.4) {
+                return -1;
+            }
+            if (sat < 0.16 && val > 0.72) {
+                return -1;
+            }
+
             let best = -1;
-            let bestDist = Infinity;
+            let bestScore = Infinity;
             COLOR_RGB.forEach((rgb, index) => {
-                const dist = (r - rgb[0]) ** 2 + (g - rgb[1]) ** 2 + (b - rgb[2]) ** 2;
-                if (dist < bestDist) {
-                    bestDist = dist;
+                const [colorHue, colorSat, colorVal] = COLOR_HSV[index];
+                const rgbDist = (r - rgb[0]) ** 2 + (g - rgb[1]) ** 2 + (b - rgb[2]) ** 2;
+                const score = colorSat < 0.28
+                    ? rgbDist / 180 + Math.abs(sat - colorSat) * 260 + Math.abs(val - colorVal) * 140
+                    : hueDiff(hue, colorHue) * 6 + Math.abs(sat - colorSat) * 55 + Math.abs(val - colorVal) * 35 + rgbDist / 500;
+                if (score < bestScore) {
+                    bestScore = score;
                     best = index;
                 }
             });
-            const brightness = r + g + b;
-            if (bestDist > 5200 && brightness < 70) {
-                return -1;
-            }
-            if (bestDist > 11000) {
-                return -1;
-            }
-            return best;
+            return bestScore > 120 ? -1 : best;
         }
 
         function smoothSeries(values) {
@@ -3061,16 +3096,28 @@
             if (!segments.length) {
                 return [0, density.length];
             }
-            const widths = segments.map(([from, to]) => to - from).sort((a, b) => a - b);
+            const lengths = segments.map(([from, to]) => to - from);
+            const maxLength = Math.max(...lengths);
+            const keep = segments.filter((segment, index) => {
+                const length = lengths[index];
+                let sum = 0;
+                for (let i = segment[0]; i < segment[1]; i++) {
+                    sum += density[i];
+                }
+                const average = sum / Math.max(1, length);
+                return !(length < maxLength * 0.35 && average > 0.82);
+            });
+            const usable = keep.length ? keep : segments;
+            const widths = usable.map(([from, to]) => to - from).sort((a, b) => a - b);
             const median = widths[Math.floor(widths.length / 2)] || 8;
-            const maxGap = Math.max(3, Math.round(median * 0.55));
-            const merged = [segments[0].slice()];
-            for (let i = 1; i < segments.length; i++) {
+            const maxGap = Math.max(3, Math.min(8, Math.round(median * 0.28)));
+            const merged = [usable[0].slice()];
+            for (let i = 1; i < usable.length; i++) {
                 const previous = merged[merged.length - 1];
-                if (segments[i][0] - previous[1] <= maxGap) {
-                    previous[1] = segments[i][1];
+                if (usable[i][0] - previous[1] <= maxGap) {
+                    previous[1] = usable[i][1];
                 } else {
-                    merged.push(segments[i].slice());
+                    merged.push(usable[i].slice());
                 }
             }
             merged.sort((left, right) => (right[1] - right[0]) - (left[1] - left[0]));
@@ -3079,7 +3126,7 @@
 
         function findGridCuts(density) {
             const peak = Math.max(...density, 0.0001);
-            const cellThreshold = peak * 0.28;
+            const cellThreshold = peak * 0.22;
             const cuts = [];
             let inCell = false;
             let cellStart = 0;
@@ -3103,12 +3150,145 @@
             const median = widths[Math.floor(widths.length / 2)];
             return cuts.filter(([a, b]) => {
                 const width = b - a;
-                return width > median * 0.45 && width < median * 1.8;
+                return width > median * 0.4 && width < median * 1.9;
             });
         }
 
+        function autocorrelationPitch(density) {
+            let bestPitch = 0;
+            let bestScore = -1;
+            const maxPitch = Math.floor(density.length / MIN_BOARD_SIZE);
+            for (let pitch = 8; pitch <= maxPitch; pitch++) {
+                let score = 0;
+                let count = 0;
+                for (let i = 0; i + pitch < density.length; i++) {
+                    score += density[i] * density[i + pitch];
+                    count += 1;
+                }
+                const average = count ? score / count : 0;
+                if (average > bestScore) {
+                    bestScore = average;
+                    bestPitch = pitch;
+                }
+            }
+            return bestPitch;
+        }
+
+        function cutsFromPitch(density, origin) {
+            const pitch = autocorrelationPitch(density);
+            const count = pitch > 0 ? Math.round(density.length / pitch) : 0;
+            if (pitch < 6 || count < MIN_BOARD_SIZE || count > 40) {
+                return [];
+            }
+            let bestPhase = 0;
+            let bestScore = -1;
+            for (let phase = 0; phase < pitch; phase++) {
+                let score = 0;
+                for (let i = 0; i < count; i++) {
+                    const center = Math.min(density.length - 1, Math.floor(phase + i * pitch + pitch / 2));
+                    score += density[center];
+                }
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestPhase = phase;
+                }
+            }
+            const cuts = [];
+            for (let i = 0; i < count; i++) {
+                const start = origin + Math.max(0, Math.round(bestPhase + i * pitch));
+                const end = origin + Math.min(density.length, Math.round(bestPhase + (i + 1) * pitch));
+                if (end - start >= 3) {
+                    cuts.push([start, end]);
+                }
+            }
+            return cuts.length >= MIN_BOARD_SIZE ? cuts : [];
+        }
+
+        function sampleCellColor(classified, data, width, height, left, right, top, bottom) {
+            const votes = new Array(COLORS.length).fill(0);
+            const innerLeft = Math.floor(left + (right - left) * 0.28);
+            const innerRight = Math.ceil(right - (right - left) * 0.28);
+            const innerTop = Math.floor(top + (bottom - top) * 0.28);
+            const innerBottom = Math.ceil(bottom - (bottom - top) * 0.28);
+            for (let y = innerTop; y < innerBottom; y++) {
+                for (let x = innerLeft; x < innerRight; x++) {
+                    if (x < 0 || y < 0 || x >= width || y >= height) {
+                        continue;
+                    }
+                    const color = classified[y * width + x];
+                    if (color >= 0) {
+                        votes[color] += 1;
+                    }
+                }
+            }
+            let best = 0;
+            votes.forEach((vote, index) => {
+                if (vote > votes[best]) {
+                    best = index;
+                }
+            });
+            if (votes[best] === 0) {
+                const cx = Math.floor((left + right) / 2);
+                const cy = Math.floor((top + bottom) / 2);
+                const i = (cy * width + cx) * 4;
+                const fallback = nearestGameColor(data[i], data[i + 1], data[i + 2]);
+                return fallback >= 0 ? fallback : 0;
+            }
+            return best;
+        }
+
+        function colorsFromCuts(classified, data, width, height, colCuts, rowCuts) {
+            const colors = [];
+            rowCuts.forEach(([top, bottom]) => {
+                colCuts.forEach(([left, right]) => {
+                    colors.push(sampleCellColor(classified, data, width, height, left, right, top, bottom));
+                });
+            });
+            return colors;
+        }
+
+        function tryUniformGrid(classified, data, width, height, x0, x1, y0, y1) {
+            const boxW = x1 - x0;
+            const boxH = y1 - y0;
+            let best = null;
+            let bestScore = -1;
+            for (let cols = MIN_BOARD_SIZE; cols <= 24; cols++) {
+                for (let rows = MIN_BOARD_SIZE; rows <= 24; rows++) {
+                    const cellW = boxW / cols;
+                    const cellH = boxH / rows;
+                    const square = Math.abs(cellW - cellH) / Math.max(cellW, cellH, 1);
+                    if (square > 0.3 || cellW < 6 || cellH < 6) {
+                        continue;
+                    }
+                    const colors = [];
+                    let recognized = 0;
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < cols; col++) {
+                            const left = x0 + col * cellW;
+                            const right = x0 + (col + 1) * cellW;
+                            const top = y0 + row * cellH;
+                            const bottom = y0 + (row + 1) * cellH;
+                            const color = sampleCellColor(classified, data, width, height, left, right, top, bottom);
+                            colors.push(color);
+                            const cx = Math.floor((left + right) / 2);
+                            const cy = Math.floor((top + bottom) / 2);
+                            if (classified[cy * width + cx] >= 0) {
+                                recognized += 1;
+                            }
+                        }
+                    }
+                    const score = recognized / (cols * rows) - square * 0.4;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        best = { boardWidth: cols, boardHeight: rows, colors };
+                    }
+                }
+            }
+            return bestScore >= 0.62 ? best : null;
+        }
+
         function reconstructBoardFromImage(image) {
-            const maxSide = 960;
+            const maxSide = 1200;
             const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
             const width = Math.max(8, Math.round(image.width * scale));
             const height = Math.max(8, Math.round(image.height * scale));
@@ -3119,7 +3299,6 @@
             ctx.drawImage(image, 0, 0, width, height);
             const { data } = ctx.getImageData(0, 0, width, height);
             const classified = new Int8Array(width * height);
-            const colHits = new Array(width).fill(0);
             const rowHits = new Array(height).fill(0);
 
             for (let y = 0; y < height; y++) {
@@ -3128,63 +3307,49 @@
                     const color = nearestGameColor(data[i], data[i + 1], data[i + 2]);
                     classified[y * width + x] = color;
                     if (color >= 0) {
-                        colHits[x] += 1;
                         rowHits[y] += 1;
                     }
                 }
             }
 
-            const colDensity = smoothSeries(colHits.map((count) => count / height));
             const rowDensity = smoothSeries(rowHits.map((count) => count / width));
-            const [x0, x1] = findOccupiedBand(colDensity);
             const [y0, y1] = findOccupiedBand(rowDensity);
-            const colCuts = findGridCuts(colDensity.slice(x0, x1)).map(([a, b]) => [a + x0, b + x0]);
-            const rowCuts = findGridCuts(rowDensity.slice(y0, y1)).map(([a, b]) => [a + y0, b + y0]);
-
-            if (colCuts.length < MIN_BOARD_SIZE || rowCuts.length < MIN_BOARD_SIZE) {
-                throw new Error("Не удалось найти сетку поля на снимке.");
-            }
-            if (colCuts.length > 40 || rowCuts.length > 40) {
-                throw new Error("Сетка получилась слишком крупной. Нужен снимок поля крупнее.");
-            }
-
-            const colors = [];
-            rowCuts.forEach(([top, bottom]) => {
-                colCuts.forEach(([left, right]) => {
-                    const cx = Math.floor((left + right) / 2);
-                    const cy = Math.floor((top + bottom) / 2);
-                    const votes = new Array(COLORS.length).fill(0);
-                    for (let y = cy - 1; y <= cy + 1; y++) {
-                        for (let x = cx - 1; x <= cx + 1; x++) {
-                            if (x < 0 || y < 0 || x >= width || y >= height) {
-                                continue;
-                            }
-                            const color = classified[y * width + x];
-                            if (color >= 0) {
-                                votes[color] += 1;
-                            }
-                        }
+            const colHits = new Array(width).fill(0);
+            for (let y = y0; y < y1; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (classified[y * width + x] >= 0) {
+                        colHits[x] += 1;
                     }
-                    let best = 0;
-                    votes.forEach((vote, index) => {
-                        if (vote > votes[best]) {
-                            best = index;
-                        }
-                    });
-                    if (votes[best] === 0) {
-                        const i = (cy * width + cx) * 4;
-                        const fallback = nearestGameColor(data[i], data[i + 1], data[i + 2]);
-                        best = fallback >= 0 ? fallback : 0;
-                    }
-                    colors.push(best);
-                });
-            });
+                }
+            }
+            const boardRows = Math.max(1, y1 - y0);
+            const colDensity = smoothSeries(colHits.map((count) => count / boardRows));
+            const [x0, x1] = findOccupiedBand(colDensity);
 
-            return {
-                boardWidth: colCuts.length,
-                boardHeight: rowCuts.length,
-                colors
-            };
+            let colCuts = findGridCuts(colDensity.slice(x0, x1)).map(([a, b]) => [a + x0, b + x0]);
+            let rowCuts = findGridCuts(rowDensity.slice(y0, y1)).map(([a, b]) => [a + y0, b + y0]);
+            if (colCuts.length < MIN_BOARD_SIZE) {
+                colCuts = cutsFromPitch(colDensity.slice(x0, x1), x0);
+            }
+            if (rowCuts.length < MIN_BOARD_SIZE) {
+                rowCuts = cutsFromPitch(rowDensity.slice(y0, y1), y0);
+            }
+
+            if (colCuts.length >= MIN_BOARD_SIZE && rowCuts.length >= MIN_BOARD_SIZE
+                && colCuts.length <= 40 && rowCuts.length <= 40) {
+                return {
+                    boardWidth: colCuts.length,
+                    boardHeight: rowCuts.length,
+                    colors: colorsFromCuts(classified, data, width, height, colCuts, rowCuts)
+                };
+            }
+
+            const uniform = tryUniformGrid(classified, data, width, height, x0, x1, y0, y1);
+            if (uniform) {
+                return uniform;
+            }
+
+            throw new Error("Не удалось найти сетку поля. Нужен снимок всего поля анфас, без обрезанных рядов.");
         }
 
         function loadImageFile(file) {
