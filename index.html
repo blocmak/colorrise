@@ -1594,8 +1594,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v40";
-        const BUILD_DATE = "2026-08-17T12:35:00Z";
+        const APP_VERSION = "v41";
+        const BUILD_DATE = "2026-08-21T12:35:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -3047,22 +3047,34 @@
         function findOccupiedBand(density, minRatio = 0.12) {
             const peak = Math.max(...density, 0.0001);
             const threshold = peak * minRatio;
-            let bestStart = 0;
-            let bestEnd = 0;
+            const segments = [];
             let start = -1;
             for (let i = 0; i <= density.length; i++) {
                 const active = i < density.length && density[i] >= threshold;
                 if (active && start < 0) {
                     start = i;
                 } else if (!active && start >= 0) {
-                    if (i - start > bestEnd - bestStart) {
-                        bestStart = start;
-                        bestEnd = i;
-                    }
+                    segments.push([start, i]);
                     start = -1;
                 }
             }
-            return [bestStart, Math.max(bestEnd, bestStart + 1)];
+            if (!segments.length) {
+                return [0, density.length];
+            }
+            const widths = segments.map(([from, to]) => to - from).sort((a, b) => a - b);
+            const median = widths[Math.floor(widths.length / 2)] || 8;
+            const maxGap = Math.max(3, Math.round(median * 0.55));
+            const merged = [segments[0].slice()];
+            for (let i = 1; i < segments.length; i++) {
+                const previous = merged[merged.length - 1];
+                if (segments[i][0] - previous[1] <= maxGap) {
+                    previous[1] = segments[i][1];
+                } else {
+                    merged.push(segments[i].slice());
+                }
+            }
+            merged.sort((left, right) => (right[1] - right[0]) - (left[1] - left[0]));
+            return merged[0];
         }
 
         function findGridCuts(density) {
@@ -3210,6 +3222,18 @@
             }
         }
 
+        function pluralMoves(count) {
+            const mod100 = count % 100;
+            const mod10 = count % 10;
+            if (mod10 === 1 && mod100 !== 11) {
+                return "ход";
+            }
+            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+                return "хода";
+            }
+            return "ходов";
+        }
+
         function appendMoveChip(container, move) {
             const chip = document.createElement("span");
             chip.className = "move-chip";
@@ -3245,7 +3269,7 @@
                 bestComboTextEl.textContent = "Для этой карты ещё нет выигрышной комбинации.";
                 renderMoveLogInto(bestComboListEl, [], "");
             } else {
-                bestComboTextEl.textContent = `Самая короткая победа: ${bestWin.moveCount} ход(а/ов) человека.`;
+                bestComboTextEl.textContent = `Самая короткая победа: ${bestWin.moveCount} ${pluralMoves(bestWin.moveCount)} человека.`;
                 renderMoveLogInto(bestComboListEl, bestWin.moves, "");
             }
             openDialog(bestComboDialogEl);
