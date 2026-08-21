@@ -1594,8 +1594,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v42";
-        const BUILD_DATE = "2026-08-21T14:20:00Z";
+        const APP_VERSION = "v43";
+        const BUILD_DATE = "2026-08-21T14:42:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -3719,12 +3719,16 @@
             endgameTextEl.textContent = "";
         }
 
+        function seedCaption() {
+            return `Seed: ${boardSeed >>> 0}`;
+        }
+
         function showEndgameEffect(playerId) {
             clearEndgameEffect();
 
             if (playerId === 0) {
                 endgameTitleEl.textContent = "Победа!";
-                endgameTextEl.textContent = "Ты захватил больше половины поля. Салют!";
+                endgameTextEl.textContent = `Ты захватил больше половины поля. Салют! ${seedCaption()}`;
                 createFireworks();
                 endgameEffectEl.classList.add("visible", "victory");
                 return;
@@ -3732,13 +3736,13 @@
 
             if (playerId === null) {
                 endgameTitleEl.textContent = "Ничья!";
-                endgameTextEl.textContent = "Победила дружба.";
+                endgameTextEl.textContent = `Победила дружба. ${seedCaption()}`;
                 endgameEffectEl.classList.add("visible", "draw");
                 return;
             }
 
             endgameTitleEl.textContent = "Поражение";
-            endgameTextEl.textContent = "Компьютер первым забрал больше половины поля. Можно откатить ход и попробовать иначе.";
+            endgameTextEl.textContent = `Компьютер первым забрал больше половины поля. Можно откатить ход и попробовать иначе. ${seedCaption()}`;
             createDefeatRain();
             endgameEffectEl.classList.add("visible", "defeat");
         }
