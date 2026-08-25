@@ -1208,7 +1208,7 @@
             display: grid;
             place-items: center;
             padding: 18px;
-            overflow: hidden;
+            overflow: auto;
             background: rgba(5, 8, 20, 0.36);
             opacity: 0;
             pointer-events: none;
@@ -1227,7 +1227,9 @@
             position: relative;
             z-index: 2;
             width: min(440px, 92vw);
-            padding: 36px 48px 28px 22px;
+            padding: 36px 48px 22px 22px;
+            max-height: min(92vh, 100%);
+            overflow: auto;
             border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: 28px;
             background: rgba(13, 18, 35, 0.88);
@@ -1637,11 +1639,11 @@
             <h2 id="endgameTitle"></h2>
             <p id="endgameText"></p>
             <div class="endgame-actions">
+                <button class="action-btn endgame-dismiss" id="endgameDismissButton" type="button">Закрыть</button>
                 <button class="action-btn primary" id="endgameNewGameButton" type="button">Новая игра</button>
                 <button class="action-btn" id="endgameReplayButton" type="button">Переиграть</button>
                 <button class="action-btn" id="endgameUndoButton" type="button">Шаг назад</button>
                 <button class="action-btn" id="endgameMenuButton" type="button">Меню</button>
-                <button class="action-btn endgame-dismiss" id="endgameDismissButton" type="button">Закрыть</button>
             </div>
         </div>
     </div>
