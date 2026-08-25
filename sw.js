@@ -1,4 +1,4 @@
-const CACHE_NAME = "colorwars-duel-pwa-v44";
+const CACHE_NAME = "colorwars-duel-pwa-v45";
 const APP_SHELL = [
     "./",
     "./index.html",

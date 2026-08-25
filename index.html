@@ -56,6 +56,12 @@
             cursor: not-allowed;
         }
 
+        input,
+        textarea {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
         .app {
             width: 100%;
             margin: 0 auto;
@@ -875,7 +881,7 @@
 
         .history-item {
             display: grid;
-            gap: 4px;
+            gap: 8px;
             width: 100%;
             padding: 12px 14px;
             border-radius: 14px;
@@ -883,9 +889,22 @@
             text-align: left;
         }
 
-        .history-item:hover,
-        .history-item:focus-visible {
-            background: #34405f;
+        .history-play {
+            display: grid;
+            gap: 4px;
+            width: 100%;
+            padding: 0;
+            background: transparent;
+            text-align: left;
+            color: inherit;
+        }
+
+        .history-play:hover strong,
+        .history-play:focus-visible strong {
+            color: var(--accent);
+        }
+
+        .history-play:focus-visible {
             outline: none;
         }
 
@@ -896,6 +915,29 @@
         .history-item span {
             color: var(--muted);
             font-size: 0.82rem;
+        }
+
+        .history-comment {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.88rem;
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .history-comment:focus {
+            outline: 2px solid rgba(102, 227, 255, 0.45);
+            outline-offset: 1px;
+        }
+
+        .history-comment::placeholder {
+            color: var(--muted);
         }
 
         .history-empty {
@@ -1185,13 +1227,35 @@
             position: relative;
             z-index: 2;
             width: min(440px, 92vw);
-            padding: 28px 22px;
+            padding: 36px 48px 28px 22px;
             border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: 28px;
             background: rgba(13, 18, 35, 0.88);
             box-shadow: var(--shadow);
             text-align: center;
             backdrop-filter: blur(18px);
+        }
+
+        .endgame-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 1.55rem;
+            line-height: 1;
+        }
+
+        .endgame-close:hover,
+        .endgame-close:focus-visible {
+            background: rgba(255, 255, 255, 0.18);
+            outline: none;
+        }
+
+        .endgame-actions .endgame-dismiss {
+            grid-column: 1 / -1;
         }
 
         .endgame-effect.victory .endgame-card {
@@ -1523,7 +1587,7 @@
     <div class="dialog-backdrop" id="historyDialog" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
         <div class="dialog">
             <h2 id="historyTitle">История партий</h2>
-            <p>Выберите карту, чтобы сыграть её заново. Для выигранных партий хранится самая короткая победная комбинация.</p>
+            <p>Выберите карту, чтобы сыграть её заново. У каждой партии указана дата сохранения — к ней можно добавить комментарий. Для выигранных партий хранится самая короткая победная комбинация.</p>
             <div class="history-list" id="historyList"></div>
             <p class="history-empty" id="historyEmpty">Пока нет сохранённых партий.</p>
             <div class="dialog-actions">
@@ -1569,6 +1633,7 @@
     <div class="endgame-effect" id="endgameEffect" role="status" aria-live="assertive">
         <div class="effect-layer" id="effectLayer" aria-hidden="true"></div>
         <div class="endgame-card">
+            <button class="endgame-close" id="endgameCloseButton" type="button" aria-label="Закрыть">×</button>
             <h2 id="endgameTitle"></h2>
             <p id="endgameText"></p>
             <div class="endgame-actions">
@@ -1576,6 +1641,7 @@
                 <button class="action-btn" id="endgameReplayButton" type="button">Переиграть</button>
                 <button class="action-btn" id="endgameUndoButton" type="button">Шаг назад</button>
                 <button class="action-btn" id="endgameMenuButton" type="button">Меню</button>
+                <button class="action-btn endgame-dismiss" id="endgameDismissButton" type="button">Закрыть</button>
             </div>
         </div>
     </div>
@@ -1592,11 +1658,12 @@
         const SETTINGS_KEY = "colorwars-duel-settings-v1";
         const PARTY_HISTORY_KEY = "colorwars-duel-history-v1";
         const MAX_PARTY_HISTORY = 40;
+        const MAX_PARTY_COMMENT = 200;
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v44";
-        const BUILD_DATE = "2026-08-21T17:33:00Z";
+        const APP_VERSION = "v45";
+        const BUILD_DATE = "2026-08-25T19:30:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -1704,6 +1771,8 @@
         const endgameReplayButton = document.getElementById("endgameReplayButton");
         const endgameUndoButton = document.getElementById("endgameUndoButton");
         const endgameMenuButton = document.getElementById("endgameMenuButton");
+        const endgameCloseButton = document.getElementById("endgameCloseButton");
+        const endgameDismissButton = document.getElementById("endgameDismissButton");
         const installHintEl = document.getElementById("installHint");
         const buildInfoEl = document.getElementById("buildInfo");
 
@@ -2723,8 +2792,9 @@
                     colors: Array.isArray(entry.colors)
                         ? entry.colors.map((color) => Number(color))
                         : null,
-                    createdAt: entry.createdAt || new Date().toISOString(),
+                    createdAt: entry.createdAt || entry.lastPlayedAt || new Date().toISOString(),
                     lastPlayedAt: entry.lastPlayedAt || entry.createdAt || new Date().toISOString(),
+                    comment: sanitizePartyComment(entry.comment),
                     bestWin: entry.bestWin && Number.isInteger(entry.bestWin.moveCount)
                         ? {
                             moveCount: entry.bestWin.moveCount,
@@ -2739,6 +2809,24 @@
 
         function savePartyHistory(list) {
             localStorage.setItem(PARTY_HISTORY_KEY, JSON.stringify(list.slice(0, MAX_PARTY_HISTORY)));
+        }
+
+        function sanitizePartyComment(value) {
+            return String(value || "").replace(/\s+/g, " ").trim().slice(0, MAX_PARTY_COMMENT);
+        }
+
+        function updatePartyComment(entry, comment) {
+            const list = loadPartyHistory();
+            const key = partyKey(entry.seed, entry.boardWidth, entry.boardHeight);
+            const index = list.findIndex((item) => partyKey(item.seed, item.boardWidth, item.boardHeight) === key);
+            if (index < 0) {
+                return;
+            }
+            list[index] = {
+                ...list[index],
+                comment: sanitizePartyComment(comment)
+            };
+            savePartyHistory(list);
         }
 
         function findParty(seed = boardSeed, width = boardWidth, height = boardHeight) {
@@ -2759,6 +2847,9 @@
                 colors: patch.colors || previous?.colors || null,
                 createdAt: previous?.createdAt || new Date().toISOString(),
                 lastPlayedAt: new Date().toISOString(),
+                comment: patch.comment !== undefined
+                    ? sanitizePartyComment(patch.comment)
+                    : (previous?.comment || ""),
                 bestWin: patch.bestWin !== undefined ? patch.bestWin : previous?.bestWin || null
             };
             if (index >= 0) {
@@ -3611,16 +3702,59 @@
             historyListEl.replaceChildren();
             historyEmptyEl.hidden = list.length > 0;
             list.forEach((entry) => {
+                const item = document.createElement("article");
+                item.className = "history-item";
+
                 const button = document.createElement("button");
                 button.type = "button";
-                button.className = "history-item";
+                button.className = "history-play";
+
+                const title = document.createElement("strong");
+                title.textContent = `Seed ${entry.seed}`;
+
+                const meta = document.createElement("span");
                 const best = entry.bestWin
                     ? `лучшая победа: ${entry.bestWin.moveCount} ходов`
                     : "победы пока нет";
                 const source = entry.source === "screenshot" ? "скриншот" : "seed";
-                button.innerHTML = `<strong>Seed ${entry.seed}</strong><span>${entry.boardWidth}×${entry.boardHeight} · ${source} · ${best}</span>`;
+                meta.textContent = `${entry.boardWidth}×${entry.boardHeight} · ${source} · ${best}`;
+
+                const saved = document.createElement("span");
+                saved.className = "history-date";
+                saved.textContent = `Сохранено: ${formatBuildDate(entry.createdAt)}`;
+
+                button.append(title, meta, saved);
                 button.addEventListener("click", () => startGameFromHistory(entry));
-                historyListEl.appendChild(button);
+
+                const commentInput = document.createElement("input");
+                commentInput.type = "text";
+                commentInput.className = "history-comment";
+                commentInput.maxLength = MAX_PARTY_COMMENT;
+                commentInput.placeholder = "Комментарий";
+                commentInput.value = entry.comment || "";
+                commentInput.setAttribute("aria-label", "Комментарий к партии");
+                commentInput.addEventListener("click", (event) => event.stopPropagation());
+                commentInput.addEventListener("pointerdown", (event) => event.stopPropagation());
+                const persistComment = () => {
+                    const next = sanitizePartyComment(commentInput.value);
+                    commentInput.value = next;
+                    if (next === (entry.comment || "")) {
+                        return;
+                    }
+                    updatePartyComment(entry, next);
+                    entry.comment = next;
+                };
+                commentInput.addEventListener("change", persistComment);
+                commentInput.addEventListener("blur", persistComment);
+                commentInput.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        commentInput.blur();
+                    }
+                });
+
+                item.append(button, commentInput);
+                historyListEl.appendChild(item);
             });
         }
 
@@ -4077,6 +4211,9 @@
                     closeDialog(moveLogDialogEl);
                     closeDialog(bestComboDialogEl);
                     closeDialog(screenshotDialogEl);
+                    if (endgameEffectEl.classList.contains("visible")) {
+                        clearEndgameEffect();
+                    }
                 }
             });
             window.addEventListener("resize", updateBoardSize);
@@ -4090,6 +4227,8 @@
             endgameReplayButton.addEventListener("click", restartSameField);
             endgameUndoButton.addEventListener("click", undoMove);
             endgameMenuButton.addEventListener("click", showStartScreen);
+            endgameCloseButton.addEventListener("click", clearEndgameEffect);
+            endgameDismissButton.addEventListener("click", clearEndgameEffect);
             registerServiceWorker();
         }
 
