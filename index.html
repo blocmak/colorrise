@@ -1554,7 +1554,7 @@
             <h2 id="rulesTitle">Правила игры</h2>
             <ol>
                 <li>Играют два участника: человек и компьютер.</li>
-                <li>Каждый игрок начинает в своём углу со случайной связной территорией одного цвета.</li>
+                <li>Каждый игрок начинает в своём углу с одной клетки своего цвета.</li>
                 <li>За ход выберите цвет снизу или тапните плитку такого цвета на поле.</li>
                 <li>Нельзя выбрать свой текущий цвет или цвет соперника.</li>
                 <li>Все ваши плитки перекрашиваются, а соседние плитки выбранного цвета становятся вашими.</li>
@@ -1654,8 +1654,6 @@
         const TARGET_TILE_SIZE = 30;
         const MIN_BOARD_SIZE = 6;
         const MAX_BOARD_SIZE = 40;
-        const START_MIN_SEEDS = 2;
-        const START_MAX_SEEDS = 6;
         const STORAGE_KEY = "colorwars-duel-state-v5";
         const SETTINGS_KEY = "colorwars-duel-settings-v1";
         const PARTY_HISTORY_KEY = "colorwars-duel-history-v1";
@@ -1664,8 +1662,8 @@
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v45";
-        const BUILD_DATE = "2026-08-25T19:30:00Z";
+        const APP_VERSION = "v46";
+        const BUILD_DATE = "2026-08-26T16:23:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -2108,73 +2106,22 @@
             ];
         }
 
-        function randomStartingSeeds(corner, random) {
-            const [startX, startY] = cornerPosition(corner);
-            const targetSize = START_MIN_SEEDS
-                + Math.floor(random() * (START_MAX_SEEDS - START_MIN_SEEDS + 1));
-            const seeds = [[startX, startY]];
-            const used = new Set([indexOf(startX, startY)]);
-
-            while (seeds.length < targetSize) {
-                const candidates = [];
-                seeds.forEach(([x, y]) => {
-                    forEachNeighbor(x, y, (nx, ny) => {
-                        const key = indexOf(nx, ny);
-                        if (!used.has(key)) {
-                            candidates.push([nx, ny]);
-                        }
-                    });
-                });
-
-                if (!candidates.length) {
-                    break;
-                }
-
-                const [nextX, nextY] = candidates[Math.floor(random() * candidates.length)];
-                used.add(indexOf(nextX, nextY));
-                seeds.push([nextX, nextY]);
-            }
-
-            return seeds;
+        function nextColorIndex(colorIndex) {
+            return (colorIndex + 1) % COLORS.length;
         }
 
-        function claimStartingRegion(playerId, corner, colorIndex, source, random) {
-            const queue = [];
-            let head = 0;
-            const visited = new Set();
+        function claimStartingCell(playerId, corner, colorIndex, source) {
+            const [startX, startY] = cornerPosition(corner);
+            const start = source[indexOf(startX, startY)];
+            start.owner = playerId;
+            start.color = colorIndex;
 
-            const processNeighbor = (nx, ny) => {
-                const key = indexOf(nx, ny);
-                if (visited.has(key)) {
-                    return;
+            forEachNeighbor(startX, startY, (nx, ny) => {
+                const neighbor = source[indexOf(nx, ny)];
+                if (neighbor.owner === -1 && neighbor.color === colorIndex) {
+                    neighbor.color = nextColorIndex(colorIndex);
                 }
-
-                const neighbor = source[key];
-                if (!neighbor || neighbor.color !== colorIndex) {
-                    return;
-                }
-
-                visited.add(key);
-                neighbor.owner = playerId;
-                neighbor.color = colorIndex;
-                queue.push(key);
-            };
-
-            randomStartingSeeds(corner, random).forEach(([x, y]) => {
-                const key = indexOf(x, y);
-                const cell = source[key];
-                cell.owner = playerId;
-                cell.color = colorIndex;
-                queue.push(key);
-                visited.add(key);
             });
-
-            while (head < queue.length) {
-                const index = queue[head++];
-                forEachNeighbor(index % boardWidth, (index / boardWidth) | 0, processNeighbor);
-            }
-
-            return visited.size;
         }
 
         function createBoard(seed = boardSeed) {
@@ -2200,7 +2147,7 @@
             const startingColors = [humanColor, computerColor];
 
             PLAYERS.forEach((player) => {
-                claimStartingRegion(player.id, player.corner, startingColors[player.id], nextCells, random);
+                claimStartingCell(player.id, player.corner, startingColors[player.id], nextCells);
             });
 
             return nextCells;
