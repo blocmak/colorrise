@@ -56,6 +56,12 @@
             cursor: not-allowed;
         }
 
+        input,
+        textarea {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
         .app {
             width: 100%;
             margin: 0 auto;
@@ -603,7 +609,7 @@
         .bottom-bar {
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-columns: auto minmax(0, 1fr) auto;
             align-items: stretch;
             gap: clamp(6px, 1.5vw, 10px);
             min-height: 0;
@@ -612,12 +618,70 @@
             border-radius: 16px;
             background: rgba(18, 24, 45, 0.88);
             box-shadow: var(--shadow);
+            overflow: visible;
             /* backdrop-filter: blur(18px); */
         }
 
         .bottom-bar .palette {
             align-items: stretch;
             height: 100%;
+        }
+
+        .undo-step-btn {
+            position: relative;
+            display: inline-grid;
+            place-items: center;
+            width: clamp(64px, 16vw, 84px);
+            height: 100%;
+            min-height: 42px;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #000000;
+            font-weight: 900;
+            font-size: clamp(1.2rem, 4.2vw, 1.55rem);
+            letter-spacing: -0.02em;
+            line-height: 1;
+            overflow: visible;
+            transition: transform 120ms ease, opacity 120ms ease, filter 120ms ease;
+        }
+
+        .undo-step-arrow {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .undo-step-arrow path {
+            fill: #ffffff;
+        }
+
+        .undo-step-count {
+            position: relative;
+            z-index: 1;
+            color: #000000;
+            transform: translateX(-50%);
+        }
+
+        .undo-step-btn:hover:not(:disabled),
+        .undo-step-btn:focus-visible:not(:disabled) {
+            outline: none;
+            filter: brightness(0.92);
+        }
+
+        .undo-step-btn:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .undo-step-btn:disabled {
+            cursor: default;
+        }
+
+        .undo-step-btn:disabled .undo-step-count {
+            opacity: 0.45;
         }
 
         .game-menu {
@@ -681,7 +745,7 @@
             bottom: calc(100% + 10px);
             display: grid;
             gap: 6px;
-            width: min(220px, calc(100vw - 32px));
+            width: min(260px, calc(100vw - 32px));
             padding: 12px;
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 18px;
@@ -755,6 +819,136 @@
 
         .dropdown-field select option {
             color: #0d1020;
+        }
+
+        .dropdown-seed {
+            display: grid;
+            gap: 2px;
+            padding: 6px 8px 8px;
+            text-align: left;
+        }
+
+        .dropdown-seed span {
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 750;
+        }
+
+        .dropdown-seed strong {
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            word-break: break-all;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .move-log {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 48px;
+            margin: 8px 0 0;
+        }
+
+        .move-log.empty {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .move-chip {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--move-color);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.26),
+                0 6px 12px rgba(0, 0, 0, 0.2);
+            flex: 0 0 auto;
+        }
+
+        .move-chip .palette-marker {
+            inset: 8%;
+        }
+
+        .history-list {
+            display: grid;
+            gap: 8px;
+            margin: 14px 0 0;
+            max-height: min(420px, 52vh);
+            overflow: auto;
+        }
+
+        .history-item {
+            display: grid;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #252e46;
+            text-align: left;
+        }
+
+        .history-play {
+            display: grid;
+            gap: 4px;
+            width: 100%;
+            padding: 0;
+            background: transparent;
+            text-align: left;
+            color: inherit;
+        }
+
+        .history-play:hover strong,
+        .history-play:focus-visible strong {
+            color: var(--accent);
+        }
+
+        .history-play:focus-visible {
+            outline: none;
+        }
+
+        .history-item strong {
+            font-weight: 850;
+        }
+
+        .history-item span {
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .history-comment {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.88rem;
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .history-comment:focus {
+            outline: 2px solid rgba(102, 227, 255, 0.45);
+            outline-offset: 1px;
+        }
+
+        .history-comment::placeholder {
+            color: var(--muted);
+        }
+
+        .history-empty {
+            margin: 14px 0 0;
+            color: var(--muted);
+        }
+
+        .dialog-error {
+            margin: 10px 0 0;
+            color: #ff8d8d;
+            min-height: 1.2em;
         }
 
         .palette-panel {
@@ -1014,7 +1208,7 @@
             display: grid;
             place-items: center;
             padding: 18px;
-            overflow: hidden;
+            overflow: auto;
             background: rgba(5, 8, 20, 0.36);
             opacity: 0;
             pointer-events: none;
@@ -1033,13 +1227,37 @@
             position: relative;
             z-index: 2;
             width: min(440px, 92vw);
-            padding: 28px 22px;
+            padding: 36px 48px 22px 22px;
+            max-height: min(92vh, 100%);
+            overflow: auto;
             border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: 28px;
             background: rgba(13, 18, 35, 0.88);
             box-shadow: var(--shadow);
             text-align: center;
             backdrop-filter: blur(18px);
+        }
+
+        .endgame-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 1.55rem;
+            line-height: 1;
+        }
+
+        .endgame-close:hover,
+        .endgame-close:focus-visible {
+            background: rgba(255, 255, 255, 0.18);
+            outline: none;
+        }
+
+        .endgame-actions .endgame-dismiss {
+            grid-column: 1 / -1;
         }
 
         .endgame-effect.victory .endgame-card {
@@ -1065,7 +1283,7 @@
 
         .endgame-actions {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-top: 20px;
         }
@@ -1230,9 +1448,13 @@
                 <div class="build-info" id="buildInfo">Сборка: — · Версия: —</div>
                 <nav class="main-menu" aria-label="Главное меню">
                     <button class="menu-btn primary" id="menuStartButton" type="button">Старт</button>
+                    <button class="menu-btn" id="menuSeedButton" type="button">Партия по seed</button>
+                    <button class="menu-btn" id="menuHistoryButton" type="button">История</button>
+                    <button class="menu-btn" id="menuScreenshotButton" type="button">По скриншоту</button>
                     <button class="menu-btn" id="menuSettingsButton" type="button">Настройки</button>
                     <button class="menu-btn" id="menuRulesButton" type="button">Правила</button>
                 </nav>
+                <input id="screenshotInput" type="file" accept="image/*" hidden>
             </div>
         </section>
 
@@ -1252,6 +1474,15 @@
             </section>
 
             <footer class="bottom-bar" aria-label="Управление игрой">
+                <button class="undo-step-btn" id="undoStepButton" type="button" aria-label="Ход назад">
+                    <svg class="undo-step-arrow" viewBox="0 0 72 40" preserveAspectRatio="none" aria-hidden="true">
+                        <!-- Full-height infographic arrow: matches color-button band -->
+                        <path d="M2 20 L16 1 L48 1 L40 20 L48 39 L16 39 Z"></path>
+                        <path d="M54 1 L46 20 L54 39 L60 39 L52 20 L60 1 Z"></path>
+                        <path d="M66 1 L58 20 L66 39 L72 39 L64 20 L72 1 Z"></path>
+                    </svg>
+                    <span class="undo-step-count" id="undoStepCount">0</span>
+                </button>
                 <div class="palette" id="palette" aria-label="Доступные цвета"></div>
                 <div class="game-menu" id="gameMenu">
                     <button class="hamburger-btn" id="gameMenuButton" type="button" aria-label="Открыть меню" aria-controls="gameDropdown" aria-expanded="false">
@@ -1259,15 +1490,23 @@
                     </button>
                     <div class="game-dropdown" id="gameDropdown" role="menu" aria-label="Меню игры">
                         <div class="game-dropdown-title">COLORRISE</div>
+                        <div class="dropdown-seed">
+                            <span>Seed поля</span>
+                            <strong id="gameSeedLabel">—</strong>
+                        </div>
                         <label class="dropdown-field" for="gameDifficultyInput">
                             <span>Сложность соперника</span>
                             <select id="gameDifficultyInput" aria-label="Сложность соперника">
-                                <option value="1">1. Легко</option>
-                                <option value="2">2. Нормально</option>
-                                <option value="3">3. Сложно</option>
-                                <option value="4">4. Невозможно</option>
+                                <option value="1">Легко</option>
+                                <option value="2">Нормально</option>
+                                <option value="3">Сложно</option>
+                                <option value="4">Невозможно</option>
                             </select>
                         </label>
+                        <button class="dropdown-item" id="moveLogButton" type="button" role="menuitem">Ходы</button>
+                        <button class="dropdown-item" id="bestComboButton" type="button" role="menuitem">Лучшая комбинация</button>
+                        <button class="dropdown-item" id="flipBoardButton" type="button" role="menuitem">Развернуть</button>
+                        <button class="dropdown-item" id="undoButton" type="button" role="menuitem">Ход назад</button>
                         <button class="dropdown-item" id="restartButton" type="button" role="menuitem">Начать сначала</button>
                         <button class="dropdown-item" id="newGameButton" type="button" role="menuitem">Новая игра</button>
                         <button class="dropdown-item" id="backToMenuButton" type="button" role="menuitem">Меню</button>
@@ -1296,10 +1535,10 @@
                     Сложность соперника
                     <span>Чем выше уровень, тем глубже робот просчитывает ходы.</span>
                     <select id="difficultyInput">
-                        <option value="1">1. Легко</option>
-                        <option value="2">2. Нормально</option>
-                        <option value="3">3. Сложно</option>
-                        <option value="4">4. Невозможно</option>
+                        <option value="1">Легко</option>
+                        <option value="2">Нормально</option>
+                        <option value="3">Сложно</option>
+                        <option value="4">Невозможно</option>
                     </select>
                 </label>
             </div>
@@ -1315,7 +1554,7 @@
             <h2 id="rulesTitle">Правила игры</h2>
             <ol>
                 <li>Играют два участника: человек и компьютер.</li>
-                <li>Каждый игрок начинает в своём углу со случайной связной территорией одного цвета.</li>
+                <li>Каждый игрок начинает в своём углу с одной клетки своего цвета.</li>
                 <li>За ход выберите цвет снизу или тапните плитку такого цвета на поле.</li>
                 <li>Нельзя выбрать свой текущий цвет или цвет соперника.</li>
                 <li>Все ваши плитки перекрашиваются, а соседние плитки выбранного цвета становятся вашими.</li>
@@ -1328,14 +1567,82 @@
         </div>
     </div>
 
+    <div class="dialog-backdrop" id="seedDialog" role="dialog" aria-modal="true" aria-labelledby="seedTitle">
+        <div class="dialog">
+            <h2 id="seedTitle">Партия по seed</h2>
+            <p>Введите число seed, чтобы заново сгенерировать ту же карту.</p>
+            <div class="settings-grid">
+                <label class="settings-field" for="seedInput">
+                    Seed
+                    <span>Целое число, как в меню гамбургер.</span>
+                    <input id="seedInput" type="text" inputmode="numeric" autocomplete="off" placeholder="например 184726391">
+                </label>
+            </div>
+            <p class="dialog-error" id="seedError"></p>
+            <div class="dialog-actions">
+                <button class="action-btn" id="seedCancelButton" type="button">Отмена</button>
+                <button class="action-btn primary" id="seedStartButton" type="button">Играть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-backdrop" id="historyDialog" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+        <div class="dialog">
+            <h2 id="historyTitle">История партий</h2>
+            <p>Выберите карту, чтобы сыграть её заново. У каждой партии указана дата сохранения — к ней можно добавить комментарий. Для выигранных партий хранится самая короткая победная комбинация.</p>
+            <div class="history-list" id="historyList"></div>
+            <p class="history-empty" id="historyEmpty">Пока нет сохранённых партий.</p>
+            <div class="dialog-actions">
+                <button class="action-btn primary" id="historyCloseButton" type="button">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-backdrop" id="moveLogDialog" role="dialog" aria-modal="true" aria-labelledby="moveLogTitle">
+        <div class="dialog">
+            <h2 id="moveLogTitle">Ходы партии</h2>
+            <p>Слева направо: цветные плитки — ходы человека, цветные роботы — ходы компьютера.</p>
+            <div class="move-log" id="moveLogList"></div>
+            <div class="dialog-actions">
+                <button class="action-btn primary" id="moveLogCloseButton" type="button">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-backdrop" id="bestComboDialog" role="dialog" aria-modal="true" aria-labelledby="bestComboTitle">
+        <div class="dialog">
+            <h2 id="bestComboTitle">Лучшая комбинация</h2>
+            <p id="bestComboText">Самая короткая выигрышная партия на этой карте.</p>
+            <div class="move-log" id="bestComboList"></div>
+            <div class="dialog-actions">
+                <button class="action-btn primary" id="bestComboCloseButton" type="button">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-backdrop" id="screenshotDialog" role="dialog" aria-modal="true" aria-labelledby="screenshotTitle">
+        <div class="dialog">
+            <h2 id="screenshotTitle">Поле по скриншоту</h2>
+            <p>Нужен снимок, где видно <strong>всё игровое поле</strong>: все цветные плитки в кадре, без обрезанных рядов и без сильного наклона. Можно снимать весь экран игры — полоска счёта и палитра снизу допустимы. Лучше PNG или качественный JPEG, не фото экрана под углом.</p>
+            <p class="dialog-error" id="screenshotError"></p>
+            <div class="dialog-actions">
+                <button class="action-btn" id="screenshotCancelButton" type="button">Отмена</button>
+                <button class="action-btn primary" id="screenshotPickButton" type="button">Выбрать файл</button>
+            </div>
+        </div>
+    </div>
+
     <div class="endgame-effect" id="endgameEffect" role="status" aria-live="assertive">
         <div class="effect-layer" id="effectLayer" aria-hidden="true"></div>
         <div class="endgame-card">
+            <button class="endgame-close" id="endgameCloseButton" type="button" aria-label="Закрыть">×</button>
             <h2 id="endgameTitle"></h2>
             <p id="endgameText"></p>
             <div class="endgame-actions">
+                <button class="action-btn endgame-dismiss" id="endgameDismissButton" type="button">Закрыть</button>
                 <button class="action-btn primary" id="endgameNewGameButton" type="button">Новая игра</button>
                 <button class="action-btn" id="endgameReplayButton" type="button">Переиграть</button>
+                <button class="action-btn" id="endgameUndoButton" type="button">Шаг назад</button>
                 <button class="action-btn" id="endgameMenuButton" type="button">Меню</button>
             </div>
         </div>
@@ -1346,15 +1653,17 @@
         const DEFAULT_BOARD_HEIGHT = 13;
         const TARGET_TILE_SIZE = 30;
         const MIN_BOARD_SIZE = 6;
-        const START_MIN_SEEDS = 2;
-        const START_MAX_SEEDS = 6;
-        const STORAGE_KEY = "colorwars-duel-state-v4";
+        const MAX_BOARD_SIZE = 40;
+        const STORAGE_KEY = "colorwars-duel-state-v5";
         const SETTINGS_KEY = "colorwars-duel-settings-v1";
+        const PARTY_HISTORY_KEY = "colorwars-duel-history-v1";
+        const MAX_PARTY_HISTORY = 40;
+        const MAX_PARTY_COMMENT = 200;
         // APP_VERSION (vNN) and BUILD_DATE are bumped automatically on every commit
         // by the .githooks/pre-commit hook (which also syncs the vNN suffix of
         // CACHE_NAME in sw.js). BUILD_DATE is stored in UTC and shown in МСК.
-        const APP_VERSION = "v26";
-        const BUILD_DATE = "2026-07-06T20:19:23Z";
+        const APP_VERSION = "v46";
+        const BUILD_DATE = "2026-08-26T16:23:00Z";
         const DEFAULT_DIFFICULTY = 1;
         const MIN_DIFFICULTY = 1;
         const MAX_DIFFICULTY = 4;
@@ -1399,10 +1708,18 @@
         const startScreenEl = document.getElementById("startScreen");
         const gameScreenEl = document.getElementById("gameScreen");
         const menuStartButton = document.getElementById("menuStartButton");
+        const menuSeedButton = document.getElementById("menuSeedButton");
+        const menuHistoryButton = document.getElementById("menuHistoryButton");
+        const menuScreenshotButton = document.getElementById("menuScreenshotButton");
         const menuSettingsButton = document.getElementById("menuSettingsButton");
         const menuRulesButton = document.getElementById("menuRulesButton");
         const settingsDialogEl = document.getElementById("settingsDialog");
         const rulesDialogEl = document.getElementById("rulesDialog");
+        const seedDialogEl = document.getElementById("seedDialog");
+        const historyDialogEl = document.getElementById("historyDialog");
+        const moveLogDialogEl = document.getElementById("moveLogDialog");
+        const bestComboDialogEl = document.getElementById("bestComboDialog");
+        const screenshotDialogEl = document.getElementById("screenshotDialog");
         const boardWidthInput = document.getElementById("boardWidthInput");
         const boardHeightInput = document.getElementById("boardHeightInput");
         const difficultyInput = document.getElementById("difficultyInput");
@@ -1410,10 +1727,31 @@
         const settingsCloseButton = document.getElementById("settingsCloseButton");
         const settingsSaveButton = document.getElementById("settingsSaveButton");
         const rulesCloseButton = document.getElementById("rulesCloseButton");
+        const seedInput = document.getElementById("seedInput");
+        const seedErrorEl = document.getElementById("seedError");
+        const seedCancelButton = document.getElementById("seedCancelButton");
+        const seedStartButton = document.getElementById("seedStartButton");
+        const historyListEl = document.getElementById("historyList");
+        const historyEmptyEl = document.getElementById("historyEmpty");
+        const historyCloseButton = document.getElementById("historyCloseButton");
+        const moveLogListEl = document.getElementById("moveLogList");
+        const moveLogButton = document.getElementById("moveLogButton");
+        const moveLogCloseButton = document.getElementById("moveLogCloseButton");
+        const bestComboButton = document.getElementById("bestComboButton");
+        const bestComboListEl = document.getElementById("bestComboList");
+        const bestComboTextEl = document.getElementById("bestComboText");
+        const bestComboCloseButton = document.getElementById("bestComboCloseButton");
+        const screenshotInput = document.getElementById("screenshotInput");
+        const screenshotErrorEl = document.getElementById("screenshotError");
+        const screenshotCancelButton = document.getElementById("screenshotCancelButton");
+        const screenshotPickButton = document.getElementById("screenshotPickButton");
+        const gameSeedLabel = document.getElementById("gameSeedLabel");
         const boardEl = document.getElementById("board");
         const boardWrapEl = document.getElementById("boardWrap");
         const gameFieldEl = document.getElementById("gameField");
         const paletteEl = document.getElementById("palette");
+        const undoStepButton = document.getElementById("undoStepButton");
+        const undoStepCountEl = document.getElementById("undoStepCount");
         const humanScoreBar = document.getElementById("humanScoreBar");
         const computerScoreBar = document.getElementById("computerScoreBar");
         const humanScoreLabel = document.getElementById("humanScoreLabel");
@@ -1421,6 +1759,8 @@
         const gameMenuEl = document.getElementById("gameMenu");
         const gameMenuButton = document.getElementById("gameMenuButton");
         const backToMenuButton = document.getElementById("backToMenuButton");
+        const flipBoardButton = document.getElementById("flipBoardButton");
+        const undoButton = document.getElementById("undoButton");
         const restartButton = document.getElementById("restartButton");
         const newGameButton = document.getElementById("newGameButton");
         const endgameEffectEl = document.getElementById("endgameEffect");
@@ -1429,7 +1769,10 @@
         const endgameTextEl = document.getElementById("endgameText");
         const endgameNewGameButton = document.getElementById("endgameNewGameButton");
         const endgameReplayButton = document.getElementById("endgameReplayButton");
+        const endgameUndoButton = document.getElementById("endgameUndoButton");
         const endgameMenuButton = document.getElementById("endgameMenuButton");
+        const endgameCloseButton = document.getElementById("endgameCloseButton");
+        const endgameDismissButton = document.getElementById("endgameDismissButton");
         const installHintEl = document.getElementById("installHint");
         const buildInfoEl = document.getElementById("buildInfo");
 
@@ -1440,12 +1783,18 @@
         let cells = [];
         let initialSnapshot = null;
         let history = [];
+        let moveLog = [];
+        let boardSeed = 0;
+        let boardSource = "seed";
+        let boardColorsTemplate = null;
         let currentPlayer = 0;
         let moveNumber = 1;
+        let moveCount = 0;
         let gameOver = false;
         let winnerId = null;
         let aiThinking = false;
         let aiTurnId = 0;
+        let suppressMenuToggleUntil = 0;
 
         let renderedOwners = [];
         let renderedColors = [];
@@ -1455,6 +1804,49 @@
         let robotMarkerEl = null;
         let humanMarkerIndex = -1;
         let robotMarkerIndex = -1;
+
+        function createRng(seed) {
+            let a = seed >>> 0;
+            return function random() {
+                a |= 0;
+                a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        function generateSeed() {
+            const bytes = new Uint32Array(1);
+            if (window.crypto && window.crypto.getRandomValues) {
+                window.crypto.getRandomValues(bytes);
+            }
+            return (bytes[0] || (Date.now() ^ Math.floor(Math.random() * 0xffffffff))) >>> 0;
+        }
+
+        function parseSeed(value) {
+            const text = String(value || "").trim();
+            if (!/^\d+$/.test(text)) {
+                return null;
+            }
+            const parsed = Number(text);
+            if (!Number.isFinite(parsed) || parsed > 0xffffffff) {
+                return null;
+            }
+            return parsed >>> 0;
+        }
+
+        function cloneMoves(moves) {
+            if (!Array.isArray(moves)) {
+                return [];
+            }
+            return moves
+                .filter((move) => move && (move.player === 0 || move.player === 1)
+                    && Number.isInteger(move.color)
+                    && move.color >= 0
+                    && move.color < COLORS.length)
+                .map((move) => ({ player: move.player, color: move.color }));
+        }
 
         function randomColorIndex() {
             return Math.floor(Math.random() * COLORS.length);
@@ -1565,6 +1957,12 @@
             difficulty = clampDifficulty(value);
             syncSettingsInputs();
             saveSettings();
+            closeGameMenu();
+            // Native <select> can emit a follow-up click on the hamburger and reopen the menu.
+            suppressMenuToggleUntil = performance.now() + 400;
+            if (gameDifficultyInput) {
+                gameDifficultyInput.blur();
+            }
         }
 
         function saveSettingsFromInputs() {
@@ -1649,8 +2047,15 @@
                 cells: snapshot.cells.map((cell) => ({ ...cell })),
                 currentPlayer: snapshot.currentPlayer,
                 moveNumber: snapshot.moveNumber,
+                moveCount: snapshot.moveCount,
                 gameOver: snapshot.gameOver,
-                winnerId: snapshot.winnerId
+                winnerId: snapshot.winnerId,
+                moveLog: cloneMoves(snapshot.moveLog),
+                boardSeed: snapshot.boardSeed >>> 0,
+                boardSource: snapshot.boardSource === "screenshot" ? "screenshot" : "seed",
+                boardColorsTemplate: Array.isArray(snapshot.boardColorsTemplate)
+                    ? snapshot.boardColorsTemplate.slice()
+                    : null
             };
         }
 
@@ -1661,8 +2066,13 @@
                 cells: cloneCells(),
                 currentPlayer,
                 moveNumber,
+                moveCount,
                 gameOver,
-                winnerId
+                winnerId,
+                moveLog: cloneMoves(moveLog),
+                boardSeed,
+                boardSource,
+                boardColorsTemplate: boardColorsTemplate ? boardColorsTemplate.slice() : null
             };
         }
 
@@ -1673,8 +2083,13 @@
             cells = restored.cells;
             currentPlayer = restored.currentPlayer;
             moveNumber = restored.moveNumber;
+            moveCount = Math.max(0, Number(restored.moveCount) || 0);
             gameOver = restored.gameOver;
             winnerId = restored.winnerId;
+            moveLog = restored.moveLog;
+            boardSeed = restored.boardSeed >>> 0;
+            boardSource = restored.boardSource;
+            boardColorsTemplate = restored.boardColorsTemplate;
             aiThinking = false;
             syncSettingsInputs();
             clearEndgameEffect();
@@ -1691,97 +2106,101 @@
             ];
         }
 
-        function randomStartingSeeds(corner) {
+        function nextColorIndex(colorIndex) {
+            return (colorIndex + 1) % COLORS.length;
+        }
+
+        function claimStartingCell(playerId, corner, colorIndex, source) {
             const [startX, startY] = cornerPosition(corner);
-            const targetSize = START_MIN_SEEDS
-                + Math.floor(Math.random() * (START_MAX_SEEDS - START_MIN_SEEDS + 1));
-            const seeds = [[startX, startY]];
-            const used = new Set([indexOf(startX, startY)]);
+            const start = source[indexOf(startX, startY)];
+            start.owner = playerId;
+            start.color = colorIndex;
 
-            while (seeds.length < targetSize) {
-                const candidates = [];
-                seeds.forEach(([x, y]) => {
-                    forEachNeighbor(x, y, (nx, ny) => {
-                        const key = indexOf(nx, ny);
-                        if (!used.has(key)) {
-                            candidates.push([nx, ny]);
-                        }
-                    });
-                });
-
-                if (!candidates.length) {
-                    break;
+            forEachNeighbor(startX, startY, (nx, ny) => {
+                const neighbor = source[indexOf(nx, ny)];
+                if (neighbor.owner === -1 && neighbor.color === colorIndex) {
+                    neighbor.color = nextColorIndex(colorIndex);
                 }
-
-                const [nextX, nextY] = candidates[Math.floor(Math.random() * candidates.length)];
-                used.add(indexOf(nextX, nextY));
-                seeds.push([nextX, nextY]);
-            }
-
-            return seeds;
-        }
-
-        function claimStartingRegion(playerId, corner, colorIndex, source) {
-            const queue = [];
-            let head = 0;
-            const visited = new Set();
-
-            const processNeighbor = (nx, ny) => {
-                const key = indexOf(nx, ny);
-                if (visited.has(key)) {
-                    return;
-                }
-
-                const neighbor = source[key];
-                if (!neighbor || neighbor.color !== colorIndex) {
-                    return;
-                }
-
-                visited.add(key);
-                neighbor.owner = playerId;
-                neighbor.color = colorIndex;
-                queue.push(key);
-            };
-
-            randomStartingSeeds(corner).forEach(([x, y]) => {
-                const key = indexOf(x, y);
-                const cell = source[key];
-                cell.owner = playerId;
-                cell.color = colorIndex;
-                queue.push(key);
-                visited.add(key);
             });
-
-            while (head < queue.length) {
-                const index = queue[head++];
-                forEachNeighbor(index % boardWidth, (index / boardWidth) | 0, processNeighbor);
-            }
-
-            return visited.size;
         }
 
-        function createBoard() {
+        function createBoard(seed = boardSeed) {
+            const random = createRng(seed);
+            const pickColor = () => Math.floor(random() * COLORS.length);
             const nextCells = [];
             for (let y = 0; y < boardHeight; y++) {
                 for (let x = 0; x < boardWidth; x++) {
                     nextCells.push({
                         x,
                         y,
-                        color: randomColorIndex(),
+                        color: pickColor(),
                         owner: -1
                     });
                 }
             }
 
-            const humanColor = randomColorIndex();
-            const computerColor = randomDistinctColor(humanColor);
+            const humanColor = pickColor();
+            let computerColor = pickColor();
+            while (computerColor === humanColor) {
+                computerColor = pickColor();
+            }
             const startingColors = [humanColor, computerColor];
 
             PLAYERS.forEach((player) => {
-                claimStartingRegion(player.id, player.corner, startingColors[player.id], nextCells);
+                claimStartingCell(player.id, player.corner, startingColors[player.id], nextCells);
             });
 
             return nextCells;
+        }
+
+        function createBoardFromColors(colorIndexes) {
+            const nextCells = colorIndexes.map((color, index) => ({
+                x: index % boardWidth,
+                y: Math.floor(index / boardWidth),
+                color,
+                owner: -1
+            }));
+            PLAYERS.forEach((player) => {
+                const [startX, startY] = cornerPosition(player.corner);
+                const start = nextCells[indexOf(startX, startY)];
+                if (!start) {
+                    return;
+                }
+                claimConnectedColor(player.id, start.color, startX, startY, nextCells);
+            });
+            return nextCells;
+        }
+
+        function claimConnectedColor(playerId, colorIndex, startX, startY, source) {
+            const queue = [indexOf(startX, startY)];
+            const visited = new Set(queue);
+            source[queue[0]].owner = playerId;
+            let head = 0;
+            while (head < queue.length) {
+                const index = queue[head++];
+                forEachNeighbor(index % boardWidth, (index / boardWidth) | 0, (nx, ny) => {
+                    const key = indexOf(nx, ny);
+                    if (visited.has(key)) {
+                        return;
+                    }
+                    const neighbor = source[key];
+                    if (!neighbor || neighbor.color !== colorIndex) {
+                        return;
+                    }
+                    visited.add(key);
+                    neighbor.owner = playerId;
+                    queue.push(key);
+                });
+            }
+        }
+
+        function hashColorGrid(colorIndexes) {
+            let hash = 2166136261;
+            colorIndexes.forEach((color) => {
+                hash ^= color + 1;
+                hash = Math.imul(hash, 16777619);
+            });
+            return hash >>> 0;
         }
 
         function serializeGame() {
@@ -1793,8 +2212,13 @@
                 history,
                 currentPlayer,
                 moveNumber,
+                moveCount,
                 gameOver,
-                winnerId
+                winnerId,
+                moveLog,
+                boardSeed,
+                boardSource,
+                boardColorsTemplate
             });
         }
 
@@ -1842,8 +2266,15 @@
                 cells: snapshot.cells.map((cell) => ({ ...cell })),
                 currentPlayer: snapshot.currentPlayer === 1 ? 1 : 0,
                 moveNumber: Math.max(1, Number(snapshot.moveNumber) || 1),
+                moveCount: Math.max(0, Number(snapshot.moveCount) || 0),
                 gameOver: Boolean(snapshot.gameOver),
-                winnerId: snapshot.winnerId === 0 || snapshot.winnerId === 1 ? snapshot.winnerId : null
+                winnerId: snapshot.winnerId === 0 || snapshot.winnerId === 1 ? snapshot.winnerId : null,
+                moveLog: cloneMoves(snapshot.moveLog),
+                boardSeed: Number(snapshot.boardSeed) >>> 0,
+                boardSource: snapshot.boardSource === "screenshot" ? "screenshot" : "seed",
+                boardColorsTemplate: Array.isArray(snapshot.boardColorsTemplate)
+                    ? snapshot.boardColorsTemplate.map((color) => Number(color)).filter((color) => color >= 0 && color < COLORS.length)
+                    : null
             };
         }
 
@@ -1867,8 +2298,15 @@
                     : [];
                 currentPlayer = saved.currentPlayer === 1 ? 1 : 0;
                 moveNumber = Math.max(1, Number(saved.moveNumber) || 1);
+                moveCount = Math.max(0, Number(saved.moveCount) || Math.max(0, history.length));
                 gameOver = Boolean(saved.gameOver);
                 winnerId = saved.winnerId === 0 || saved.winnerId === 1 ? saved.winnerId : null;
+                moveLog = cloneMoves(saved.moveLog);
+                boardSeed = Number(saved.boardSeed) >>> 0;
+                boardSource = saved.boardSource === "screenshot" ? "screenshot" : "seed";
+                boardColorsTemplate = Array.isArray(saved.boardColorsTemplate)
+                    ? saved.boardColorsTemplate.map((color) => Number(color))
+                    : null;
 
                 return Boolean(initialSnapshot);
             } catch (error) {
@@ -2281,6 +2719,132 @@
             return chooseComputerColorSearch(config.maxDepth, config.timeBudgetMs);
         }
 
+        function partyKey(seed, width, height) {
+            return `${seed >>> 0}:${width}x${height}`;
+        }
+
+        function loadPartyHistory() {
+            try {
+                const raw = localStorage.getItem(PARTY_HISTORY_KEY);
+                if (!raw) {
+                    return [];
+                }
+                const saved = JSON.parse(raw);
+                if (!Array.isArray(saved)) {
+                    return [];
+                }
+                return saved.map((entry) => ({
+                    seed: Number(entry.seed) >>> 0,
+                    boardWidth: clampDimension(entry.boardWidth, DEFAULT_BOARD_WIDTH),
+                    boardHeight: clampDimension(entry.boardHeight, DEFAULT_BOARD_HEIGHT),
+                    source: entry.source === "screenshot" ? "screenshot" : "seed",
+                    colors: Array.isArray(entry.colors)
+                        ? entry.colors.map((color) => Number(color))
+                        : null,
+                    createdAt: entry.createdAt || entry.lastPlayedAt || new Date().toISOString(),
+                    lastPlayedAt: entry.lastPlayedAt || entry.createdAt || new Date().toISOString(),
+                    comment: sanitizePartyComment(entry.comment),
+                    bestWin: entry.bestWin && Number.isInteger(entry.bestWin.moveCount)
+                        ? {
+                            moveCount: entry.bestWin.moveCount,
+                            moves: cloneMoves(entry.bestWin.moves)
+                        }
+                        : null
+                })).filter((entry) => entry.boardWidth && entry.boardHeight);
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function savePartyHistory(list) {
+            localStorage.setItem(PARTY_HISTORY_KEY, JSON.stringify(list.slice(0, MAX_PARTY_HISTORY)));
+        }
+
+        function sanitizePartyComment(value) {
+            return String(value || "").replace(/\s+/g, " ").trim().slice(0, MAX_PARTY_COMMENT);
+        }
+
+        function updatePartyComment(entry, comment) {
+            const list = loadPartyHistory();
+            const key = partyKey(entry.seed, entry.boardWidth, entry.boardHeight);
+            const index = list.findIndex((item) => partyKey(item.seed, item.boardWidth, item.boardHeight) === key);
+            if (index < 0) {
+                return;
+            }
+            list[index] = {
+                ...list[index],
+                comment: sanitizePartyComment(comment)
+            };
+            savePartyHistory(list);
+        }
+
+        function findParty(seed = boardSeed, width = boardWidth, height = boardHeight) {
+            const key = partyKey(seed, width, height);
+            return loadPartyHistory().find((entry) => partyKey(entry.seed, entry.boardWidth, entry.boardHeight) === key) || null;
+        }
+
+        function upsertParty(patch) {
+            const list = loadPartyHistory();
+            const key = partyKey(patch.seed, patch.boardWidth, patch.boardHeight);
+            const index = list.findIndex((entry) => partyKey(entry.seed, entry.boardWidth, entry.boardHeight) === key);
+            const previous = index >= 0 ? list[index] : null;
+            const next = {
+                seed: patch.seed >>> 0,
+                boardWidth: patch.boardWidth,
+                boardHeight: patch.boardHeight,
+                source: patch.source || previous?.source || "seed",
+                colors: patch.colors || previous?.colors || null,
+                createdAt: previous?.createdAt || new Date().toISOString(),
+                lastPlayedAt: new Date().toISOString(),
+                comment: patch.comment !== undefined
+                    ? sanitizePartyComment(patch.comment)
+                    : (previous?.comment || ""),
+                bestWin: patch.bestWin !== undefined ? patch.bestWin : previous?.bestWin || null
+            };
+            if (index >= 0) {
+                list.splice(index, 1);
+            }
+            list.unshift(next);
+            savePartyHistory(list);
+            return next;
+        }
+
+        function rememberCurrentParty() {
+            upsertParty({
+                seed: boardSeed,
+                boardWidth,
+                boardHeight,
+                source: boardSource,
+                colors: boardColorsTemplate
+            });
+        }
+
+        function recordBestWinIfNeeded() {
+            if (winnerId !== 0 || !moveLog.length) {
+                return;
+            }
+            const existing = findParty();
+            const humanMoves = moveLog.filter((move) => move.player === 0).length;
+            if (existing?.bestWin && existing.bestWin.moveCount <= humanMoves) {
+                return;
+            }
+            upsertParty({
+                seed: boardSeed,
+                boardWidth,
+                boardHeight,
+                source: boardSource,
+                colors: boardColorsTemplate,
+                bestWin: {
+                    moveCount: humanMoves,
+                    moves: cloneMoves(moveLog)
+                }
+            });
+        }
+
+        function currentBestWin() {
+            return findParty()?.bestWin || null;
+        }
+
         function finishIfNeeded() {
             const counts = territoryCounts();
             const occupied = counts[0] + counts[1];
@@ -2290,6 +2854,7 @@
                 gameOver = true;
                 winnerId = leader;
                 currentPlayer = leader;
+                recordBestWinIfNeeded();
                 saveGame();
                 render();
                 showEndgameEffect(winnerId);
@@ -2319,8 +2884,10 @@
 
             history.push(makeSnapshot());
             applyMove(0, colorIndex);
+            moveLog.push({ player: 0, color: colorIndex });
             currentPlayer = 1;
             moveNumber += 1;
+            moveCount += 1;
             saveGame();
             render();
 
@@ -2346,6 +2913,7 @@
 
             const colorIndex = chooseComputerColor();
             applyMove(1, colorIndex);
+            moveLog.push({ player: 1, color: colorIndex });
             currentPlayer = 0;
             moveNumber += 1;
             aiThinking = false;
@@ -2354,13 +2922,55 @@
             finishIfNeeded();
         }
 
-        function undoMove() {
-            if (aiThinking || !history.length) {
+        function flipBoard() {
+            if (gameOver || !initialSnapshot || !cells.length) {
                 return;
             }
 
+            closeGameMenu();
+            aiTurnId += 1;
+            aiThinking = false;
+            history.push(makeSnapshot());
+
+            const nextCells = new Array(cells.length);
+            cells.forEach((cell) => {
+                const nextX = boardWidth - 1 - cell.x;
+                const nextY = boardHeight - 1 - cell.y;
+                let owner = cell.owner;
+                if (owner === 0) {
+                    owner = 1;
+                } else if (owner === 1) {
+                    owner = 0;
+                }
+                nextCells[indexOf(nextX, nextY)] = {
+                    x: nextX,
+                    y: nextY,
+                    color: cell.color,
+                    owner
+                };
+            });
+
+            cells = nextCells;
+            currentPlayer = 0;
+            saveGame();
+            render();
+            finishIfNeeded();
+        }
+
+        function undoMove() {
+            if (!history.length) {
+                return;
+            }
+
+            closeGameMenu();
+            aiTurnId += 1;
+            aiThinking = false;
             const snapshot = history.pop();
             restoreSnapshot(snapshot);
+
+            if (!gameOver && currentPlayer === 1) {
+                runComputerTurn();
+            }
         }
 
         function restartSameField() {
@@ -2374,22 +2984,727 @@
             restoreSnapshot(initialSnapshot);
         }
 
-        function startNewGame() {
+        function beginGame({ seed, source = "seed", colors = null } = {}) {
             aiTurnId += 1;
             closeGameMenu();
+            closeDialog(seedDialogEl);
+            closeDialog(historyDialogEl);
+            closeDialog(screenshotDialogEl);
             showGameScreen();
-            applyAutoBoardDimensions();
-            cells = createBoard();
+            if (!colors) {
+                applyAutoBoardDimensions();
+            }
+            boardSeed = (seed >>> 0);
+            boardSource = source;
+            boardColorsTemplate = colors ? colors.slice() : null;
+            cells = colors
+                ? createBoardFromColors(colors)
+                : createBoard(boardSeed);
             currentPlayer = 0;
             moveNumber = 1;
+            moveCount = 0;
             gameOver = false;
             winnerId = null;
             aiThinking = false;
             history = [];
+            moveLog = [];
             initialSnapshot = makeSnapshot();
+            rememberCurrentParty();
             clearEndgameEffect();
             saveGame();
             render();
+        }
+
+        function startNewGame() {
+            beginGame({ seed: generateSeed(), source: "seed" });
+        }
+
+        function startGameFromSeed(rawSeed) {
+            const seed = parseSeed(rawSeed);
+            if (seed === null) {
+                seedErrorEl.textContent = "Введите целое число seed.";
+                return false;
+            }
+            seedErrorEl.textContent = "";
+            beginGame({ seed, source: "seed" });
+            return true;
+        }
+
+        function startGameFromHistory(entry) {
+            customBoardSize = true;
+            boardWidth = entry.boardWidth;
+            boardHeight = entry.boardHeight;
+            syncSettingsInputs();
+            saveSettings();
+            if (entry.source === "screenshot" && Array.isArray(entry.colors) && entry.colors.length === entry.boardWidth * entry.boardHeight) {
+                beginGame({
+                    seed: entry.seed,
+                    source: "screenshot",
+                    colors: entry.colors
+                });
+                return;
+            }
+            beginGame({ seed: entry.seed, source: "seed" });
+        }
+
+        function hexToRgb(hex) {
+            return [
+                Number.parseInt(hex.slice(1, 3), 16),
+                Number.parseInt(hex.slice(3, 5), 16),
+                Number.parseInt(hex.slice(5, 7), 16)
+            ];
+        }
+
+        const COLOR_RGB = COLORS.map((color) => hexToRgb(color.value));
+        const COLOR_HSV = COLOR_RGB.map(([red, green, blue]) => rgbToHsv(red, green, blue));
+
+        function rgbToHsv(red, green, blue) {
+            const r = red / 255;
+            const g = green / 255;
+            const b = blue / 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const delta = max - min;
+            let hue = 0;
+            if (delta !== 0) {
+                if (max === r) {
+                    hue = ((g - b) / delta) % 6;
+                } else if (max === g) {
+                    hue = (b - r) / delta + 2;
+                } else {
+                    hue = (r - g) / delta + 4;
+                }
+                hue *= 60;
+                if (hue < 0) {
+                    hue += 360;
+                }
+            }
+            return [hue, max === 0 ? 0 : delta / max, max];
+        }
+
+        function hueDiff(left, right) {
+            const diff = Math.abs(left - right) % 360;
+            return diff > 180 ? 360 - diff : diff;
+        }
+
+        function nearestGameColor(r, g, b) {
+            const [hue, sat, val] = rgbToHsv(r, g, b);
+            if (val < 0.07) {
+                return -1;
+            }
+            if (sat < 0.16 && val > 0.76) {
+                return -1;
+            }
+            if (sat < 0.12 && val < 0.2) {
+                return -1;
+            }
+
+            let best = -1;
+            let bestScore = Infinity;
+            COLOR_RGB.forEach((rgb, index) => {
+                const [colorHue, colorSat, colorVal] = COLOR_HSV[index];
+                const rgbDist = (r - rgb[0]) ** 2 + (g - rgb[1]) ** 2 + (b - rgb[2]) ** 2;
+                let score;
+                if (colorSat < 0.28) {
+                    score = rgbDist / 180 + Math.abs(sat - colorSat) * 260 + Math.abs(val - colorVal) * 140;
+                } else if (hueDiff(hue, colorHue) < 28 && sat > 0.18) {
+                    score = hueDiff(hue, colorHue) * 3.2 + Math.abs(sat - colorSat) * 40 + Math.abs(val - colorVal) * 18 + rgbDist / 900;
+                } else {
+                    score = hueDiff(hue, colorHue) * 6 + Math.abs(sat - colorSat) * 55 + Math.abs(val - colorVal) * 35 + rgbDist / 500;
+                }
+                if (score < bestScore) {
+                    bestScore = score;
+                    best = index;
+                }
+            });
+            return bestScore > 170 ? -1 : best;
+        }
+
+        function smoothSeries(values) {
+            const next = values.slice();
+            for (let i = 1; i < values.length - 1; i++) {
+                next[i] = (values[i - 1] + values[i] * 2 + values[i + 1]) / 4;
+            }
+            return next;
+        }
+
+        function findOccupiedBand(density, minRatio = 0.12) {
+            const peak = Math.max(...density, 0.0001);
+            const threshold = peak * minRatio;
+            const segments = [];
+            let start = -1;
+            for (let i = 0; i <= density.length; i++) {
+                const active = i < density.length && density[i] >= threshold;
+                if (active && start < 0) {
+                    start = i;
+                } else if (!active && start >= 0) {
+                    segments.push([start, i]);
+                    start = -1;
+                }
+            }
+            if (!segments.length) {
+                return [0, density.length];
+            }
+            const lengths = segments.map(([from, to]) => to - from);
+            const maxLength = Math.max(...lengths);
+            const keep = segments.filter((segment, index) => {
+                const length = lengths[index];
+                let sum = 0;
+                for (let i = segment[0]; i < segment[1]; i++) {
+                    sum += density[i];
+                }
+                const average = sum / Math.max(1, length);
+                return !(length < maxLength * 0.35 && average > 0.82);
+            });
+            const usable = keep.length ? keep : segments;
+            const widths = usable.map(([from, to]) => to - from).sort((a, b) => a - b);
+            const median = widths[Math.floor(widths.length / 2)] || 8;
+            const maxGap = Math.max(3, Math.min(8, Math.round(median * 0.28)));
+            const merged = [usable[0].slice()];
+            for (let i = 1; i < usable.length; i++) {
+                const previous = merged[merged.length - 1];
+                if (usable[i][0] - previous[1] <= maxGap) {
+                    previous[1] = usable[i][1];
+                } else {
+                    merged.push(usable[i].slice());
+                }
+            }
+            merged.sort((left, right) => (right[1] - right[0]) - (left[1] - left[0]));
+            return merged[0];
+        }
+
+        function findGridCuts(density) {
+            const peak = Math.max(...density, 0.0001);
+            const cellThreshold = peak * 0.22;
+            const cuts = [];
+            let inCell = false;
+            let cellStart = 0;
+            for (let i = 0; i < density.length; i++) {
+                const isCell = density[i] >= cellThreshold;
+                if (isCell && !inCell) {
+                    inCell = true;
+                    cellStart = i;
+                } else if (!isCell && inCell) {
+                    inCell = false;
+                    cuts.push([cellStart, i]);
+                }
+            }
+            if (inCell) {
+                cuts.push([cellStart, density.length]);
+            }
+            const widths = cuts.map(([a, b]) => b - a).sort((a, b) => a - b);
+            if (!widths.length) {
+                return [];
+            }
+            const median = widths[Math.floor(widths.length / 2)];
+            return cuts.filter(([a, b]) => {
+                const width = b - a;
+                return width > median * 0.4 && width < median * 1.9;
+            });
+        }
+
+        function autocorrelationPitch(density) {
+            let bestPitch = 0;
+            let bestScore = -1;
+            const maxPitch = Math.floor(density.length / MIN_BOARD_SIZE);
+            for (let pitch = 8; pitch <= maxPitch; pitch++) {
+                let score = 0;
+                let count = 0;
+                for (let i = 0; i + pitch < density.length; i++) {
+                    score += density[i] * density[i + pitch];
+                    count += 1;
+                }
+                const average = count ? score / count : 0;
+                if (average > bestScore) {
+                    bestScore = average;
+                    bestPitch = pitch;
+                }
+            }
+            return bestPitch;
+        }
+
+        function cutsFromPitch(density, origin) {
+            const pitch = autocorrelationPitch(density);
+            const count = pitch > 0 ? Math.round(density.length / pitch) : 0;
+            if (pitch < 6 || count < MIN_BOARD_SIZE || count > MAX_BOARD_SIZE) {
+                return [];
+            }
+            let bestPhase = 0;
+            let bestScore = -1;
+            for (let phase = 0; phase < pitch; phase++) {
+                let score = 0;
+                for (let i = 0; i < count; i++) {
+                    const center = Math.min(density.length - 1, Math.floor(phase + i * pitch + pitch / 2));
+                    score += density[center];
+                }
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestPhase = phase;
+                }
+            }
+            const cuts = [];
+            for (let i = 0; i < count; i++) {
+                const start = origin + Math.max(0, Math.round(bestPhase + i * pitch));
+                const end = origin + Math.min(density.length, Math.round(bestPhase + (i + 1) * pitch));
+                if (end - start >= 3) {
+                    cuts.push([start, end]);
+                }
+            }
+            return cuts.length >= MIN_BOARD_SIZE ? cuts : [];
+        }
+
+        function sampleCellColor(classified, data, width, height, left, right, top, bottom) {
+            const votes = new Array(COLORS.length).fill(0);
+            const innerLeft = Math.floor(left + (right - left) * 0.28);
+            const innerRight = Math.ceil(right - (right - left) * 0.28);
+            const innerTop = Math.floor(top + (bottom - top) * 0.28);
+            const innerBottom = Math.ceil(bottom - (bottom - top) * 0.28);
+            for (let y = innerTop; y < innerBottom; y++) {
+                for (let x = innerLeft; x < innerRight; x++) {
+                    if (x < 0 || y < 0 || x >= width || y >= height) {
+                        continue;
+                    }
+                    const color = classified[y * width + x];
+                    if (color >= 0) {
+                        votes[color] += 1;
+                    }
+                }
+            }
+            let best = 0;
+            votes.forEach((vote, index) => {
+                if (vote > votes[best]) {
+                    best = index;
+                }
+            });
+            if (votes[best] === 0) {
+                const cx = Math.floor((left + right) / 2);
+                const cy = Math.floor((top + bottom) / 2);
+                const i = (cy * width + cx) * 4;
+                const fallback = nearestGameColor(data[i], data[i + 1], data[i + 2]);
+                return fallback >= 0 ? fallback : 0;
+            }
+            return best;
+        }
+
+        function colorsFromCuts(classified, data, width, height, colCuts, rowCuts) {
+            const colors = [];
+            rowCuts.forEach(([top, bottom]) => {
+                colCuts.forEach(([left, right]) => {
+                    colors.push(sampleCellColor(classified, data, width, height, left, right, top, bottom));
+                });
+            });
+            return colors;
+        }
+
+        function tryUniformGrid(classified, data, width, height, x0, x1, y0, y1) {
+            const boxW = x1 - x0;
+            const boxH = y1 - y0;
+            let best = null;
+            let bestScore = -1;
+            for (let cols = MIN_BOARD_SIZE; cols <= MAX_BOARD_SIZE; cols++) {
+                for (let rows = MIN_BOARD_SIZE; rows <= MAX_BOARD_SIZE; rows++) {
+                    const cellW = boxW / cols;
+                    const cellH = boxH / rows;
+                    const square = Math.abs(cellW - cellH) / Math.max(cellW, cellH, 1);
+                    if (square > 0.3 || cellW < 6 || cellH < 6) {
+                        continue;
+                    }
+                    const colors = [];
+                    let recognized = 0;
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < cols; col++) {
+                            const left = x0 + col * cellW;
+                            const right = x0 + (col + 1) * cellW;
+                            const top = y0 + row * cellH;
+                            const bottom = y0 + (row + 1) * cellH;
+                            const color = sampleCellColor(classified, data, width, height, left, right, top, bottom);
+                            colors.push(color);
+                            const cx = Math.floor((left + right) / 2);
+                            const cy = Math.floor((top + bottom) / 2);
+                            if (classified[cy * width + cx] >= 0) {
+                                recognized += 1;
+                            }
+                        }
+                    }
+                    const score = recognized / (cols * rows) - square * 0.4;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        best = { boardWidth: cols, boardHeight: rows, colors };
+                    }
+                }
+            }
+            return bestScore >= 0.62 ? best : null;
+        }
+
+        function medianValue(values) {
+            if (!values.length) {
+                return 0;
+            }
+            const sorted = values.slice().sort((a, b) => a - b);
+            return sorted[Math.floor(sorted.length / 2)];
+        }
+
+        function clusterAxis(values, maxGap) {
+            if (!values.length) {
+                return [];
+            }
+            const sorted = values.slice().sort((a, b) => a - b);
+            const groups = [[sorted[0]]];
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] - sorted[i - 1] <= maxGap) {
+                    groups[groups.length - 1].push(sorted[i]);
+                } else {
+                    groups.push([sorted[i]]);
+                }
+            }
+            return groups.map((group) => group.reduce((sum, value) => sum + value, 0) / group.length);
+        }
+
+        function findTileBlobs(classified, width, height) {
+            const seen = new Uint8Array(width * height);
+            const blobs = [];
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const start = y * width + x;
+                    const color = classified[start];
+                    if (color < 0 || seen[start]) {
+                        continue;
+                    }
+                    let minX = x;
+                    let maxX = x;
+                    let minY = y;
+                    let maxY = y;
+                    let count = 0;
+                    const queue = [start];
+                    seen[start] = 1;
+                    for (let q = 0; q < queue.length; q++) {
+                        const index = queue[q];
+                        count += 1;
+                        const cx = index % width;
+                        const cy = (index / width) | 0;
+                        if (cx < minX) {
+                            minX = cx;
+                        }
+                        if (cx > maxX) {
+                            maxX = cx;
+                        }
+                        if (cy < minY) {
+                            minY = cy;
+                        }
+                        if (cy > maxY) {
+                            maxY = cy;
+                        }
+                        const neighbors = [index - 1, index + 1, index - width, index + width];
+                        neighbors.forEach((next) => {
+                            if (next < 0 || next >= classified.length || seen[next]) {
+                                return;
+                            }
+                            const nx = next % width;
+                            if ((index % width === 0 && nx === width - 1) || (index % width === width - 1 && nx === 0)) {
+                                return;
+                            }
+                            if (classified[next] !== color) {
+                                return;
+                            }
+                            seen[next] = 1;
+                            queue.push(next);
+                        });
+                    }
+                    blobs.push({
+                        minX,
+                        maxX,
+                        minY,
+                        maxY,
+                        bw: maxX - minX + 1,
+                        bh: maxY - minY + 1,
+                        count,
+                        color,
+                        cx: (minX + maxX) / 2,
+                        cy: (minY + maxY) / 2
+                    });
+                }
+            }
+            return blobs;
+        }
+
+        function selectBoardTiles(blobs) {
+            const squares = blobs.filter((blob) => {
+                const aspect = Math.abs(blob.bw - blob.bh) / Math.max(blob.bw, blob.bh, 1);
+                const fill = blob.count / Math.max(1, blob.bw * blob.bh);
+                return aspect < 0.5 && fill > 0.35 && blob.bw >= 4 && blob.bh >= 4 && blob.count >= 12;
+            });
+            if (squares.length < 8) {
+                return [];
+            }
+            const areas = squares.map((blob) => blob.bw * blob.bh);
+            const medianArea = medianValue(areas);
+            return squares.filter((blob) => {
+                const area = blob.bw * blob.bh;
+                return area > medianArea * 0.4 && area < medianArea * 2.4;
+            });
+        }
+
+        function gridFromTiles(tiles, classified, data, width, height) {
+            const tileSize = medianValue(tiles.map((tile) => (tile.bw + tile.bh) / 2));
+            if (tileSize < 4) {
+                return null;
+            }
+            const minX = Math.min(...tiles.map((tile) => tile.minX));
+            const maxX = Math.max(...tiles.map((tile) => tile.maxX));
+            const minY = Math.min(...tiles.map((tile) => tile.minY));
+            const maxY = Math.max(...tiles.map((tile) => tile.maxY));
+            const clusteredCols = clusterAxis(tiles.map((tile) => tile.cx), tileSize * 0.42);
+            const clusteredRows = clusterAxis(tiles.map((tile) => tile.cy), tileSize * 0.42);
+            const extentCols = Math.round((maxX - minX + 1) / tileSize);
+            const extentRows = Math.round((maxY - minY + 1) / tileSize);
+            const cols = Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE,
+                Math.abs(clusteredCols.length - extentCols) <= 2 ? clusteredCols.length : extentCols));
+            const rows = Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE,
+                Math.abs(clusteredRows.length - extentRows) <= 2 ? clusteredRows.length : extentRows));
+            if (cols < MIN_BOARD_SIZE || rows < MIN_BOARD_SIZE) {
+                return null;
+            }
+            const pad = tileSize * 0.08;
+            const left = minX - pad;
+            const top = minY - pad;
+            const cellW = (maxX - minX + 1 + pad * 2) / cols;
+            const cellH = (maxY - minY + 1 + pad * 2) / rows;
+            const colors = [];
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    colors.push(sampleCellColor(
+                        classified,
+                        data,
+                        width,
+                        height,
+                        left + col * cellW,
+                        left + (col + 1) * cellW,
+                        top + row * cellH,
+                        top + (row + 1) * cellH
+                    ));
+                }
+            }
+            return { boardWidth: cols, boardHeight: rows, colors };
+        }
+
+        function reconstructBoardFromImage(image) {
+            const maxSide = 1600;
+            const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+            const width = Math.max(8, Math.round(image.width * scale));
+            const height = Math.max(8, Math.round(image.height * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            ctx.drawImage(image, 0, 0, width, height);
+            const { data } = ctx.getImageData(0, 0, width, height);
+            const classified = new Int8Array(width * height);
+            const rowHits = new Array(height).fill(0);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const i = (y * width + x) * 4;
+                    const color = nearestGameColor(data[i], data[i + 1], data[i + 2]);
+                    classified[y * width + x] = color;
+                    if (color >= 0) {
+                        rowHits[y] += 1;
+                    }
+                }
+            }
+
+            const tiles = selectBoardTiles(findTileBlobs(classified, width, height));
+            const blobGrid = tiles.length >= 12 ? gridFromTiles(tiles, classified, data, width, height) : null;
+            if (blobGrid) {
+                return blobGrid;
+            }
+
+            const rowDensity = smoothSeries(rowHits.map((count) => count / width));
+            const [y0, y1] = findOccupiedBand(rowDensity);
+            const colHits = new Array(width).fill(0);
+            for (let y = y0; y < y1; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (classified[y * width + x] >= 0) {
+                        colHits[x] += 1;
+                    }
+                }
+            }
+            const boardRows = Math.max(1, y1 - y0);
+            const colDensity = smoothSeries(colHits.map((count) => count / boardRows));
+            const [x0, x1] = findOccupiedBand(colDensity);
+
+            let colCuts = findGridCuts(colDensity.slice(x0, x1)).map(([a, b]) => [a + x0, b + x0]);
+            let rowCuts = findGridCuts(rowDensity.slice(y0, y1)).map(([a, b]) => [a + y0, b + y0]);
+            if (colCuts.length < MIN_BOARD_SIZE) {
+                colCuts = cutsFromPitch(colDensity.slice(x0, x1), x0);
+            }
+            if (rowCuts.length < MIN_BOARD_SIZE) {
+                rowCuts = cutsFromPitch(rowDensity.slice(y0, y1), y0);
+            }
+
+            if (colCuts.length >= MIN_BOARD_SIZE && rowCuts.length >= MIN_BOARD_SIZE
+                && colCuts.length <= MAX_BOARD_SIZE && rowCuts.length <= MAX_BOARD_SIZE) {
+                return {
+                    boardWidth: colCuts.length,
+                    boardHeight: rowCuts.length,
+                    colors: colorsFromCuts(classified, data, width, height, colCuts, rowCuts)
+                };
+            }
+
+            const uniform = tryUniformGrid(classified, data, width, height, x0, x1, y0, y1);
+            if (uniform) {
+                return uniform;
+            }
+
+            throw new Error("Не удалось найти сетку поля. Нужен снимок всего поля анфас, без обрезанных рядов.");
+        }
+
+        function loadImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error("Не удалось прочитать файл."));
+                reader.onload = () => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = () => reject(new Error("Файл не похож на изображение."));
+                    image.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function startGameFromScreenshot(file) {
+            screenshotErrorEl.textContent = "Распознаю поле…";
+            try {
+                const image = await loadImageFile(file);
+                const result = reconstructBoardFromImage(image);
+                customBoardSize = true;
+                boardWidth = result.boardWidth;
+                boardHeight = result.boardHeight;
+                syncSettingsInputs();
+                saveSettings();
+                beginGame({
+                    seed: hashColorGrid(result.colors),
+                    source: "screenshot",
+                    colors: result.colors
+                });
+                screenshotErrorEl.textContent = "";
+            } catch (error) {
+                screenshotErrorEl.textContent = error.message || "Не удалось восстановить поле.";
+            }
+        }
+
+        function pluralMoves(count) {
+            const mod100 = count % 100;
+            const mod10 = count % 10;
+            if (mod10 === 1 && mod100 !== 11) {
+                return "ход";
+            }
+            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+                return "хода";
+            }
+            return "ходов";
+        }
+
+        function appendMoveChip(container, move) {
+            const chip = document.createElement("span");
+            chip.className = "move-chip";
+            chip.style.setProperty("--move-color", COLORS[move.color].value);
+            chip.title = `${move.player === 0 ? "Человек" : "Робот"}: ${COLORS[move.color].name}`;
+            if (move.player === 1) {
+                chip.appendChild(createPaletteMarker("robot"));
+            }
+            container.appendChild(chip);
+        }
+
+        function renderMoveLogInto(container, moves, emptyText) {
+            container.replaceChildren();
+            if (!moves.length) {
+                container.classList.add("empty");
+                container.textContent = emptyText;
+                return;
+            }
+            container.classList.remove("empty");
+            moves.forEach((move) => appendMoveChip(container, move));
+        }
+
+        function openMoveLogDialog() {
+            closeGameMenu();
+            renderMoveLogInto(moveLogListEl, moveLog, "Ходов пока нет.");
+            openDialog(moveLogDialogEl);
+        }
+
+        function openBestComboDialog() {
+            closeGameMenu();
+            const bestWin = currentBestWin();
+            if (!bestWin) {
+                bestComboTextEl.textContent = "Для этой карты ещё нет выигрышной комбинации.";
+                renderMoveLogInto(bestComboListEl, [], "");
+            } else {
+                bestComboTextEl.textContent = `Самая короткая победа: ${bestWin.moveCount} ${pluralMoves(bestWin.moveCount)} человека.`;
+                renderMoveLogInto(bestComboListEl, bestWin.moves, "");
+            }
+            openDialog(bestComboDialogEl);
+        }
+
+        function renderHistoryDialog() {
+            const list = loadPartyHistory();
+            historyListEl.replaceChildren();
+            historyEmptyEl.hidden = list.length > 0;
+            list.forEach((entry) => {
+                const item = document.createElement("article");
+                item.className = "history-item";
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "history-play";
+
+                const title = document.createElement("strong");
+                title.textContent = `Seed ${entry.seed}`;
+
+                const meta = document.createElement("span");
+                const best = entry.bestWin
+                    ? `лучшая победа: ${entry.bestWin.moveCount} ходов`
+                    : "победы пока нет";
+                const source = entry.source === "screenshot" ? "скриншот" : "seed";
+                meta.textContent = `${entry.boardWidth}×${entry.boardHeight} · ${source} · ${best}`;
+
+                const saved = document.createElement("span");
+                saved.className = "history-date";
+                saved.textContent = `Сохранено: ${formatBuildDate(entry.createdAt)}`;
+
+                button.append(title, meta, saved);
+                button.addEventListener("click", () => startGameFromHistory(entry));
+
+                const commentInput = document.createElement("input");
+                commentInput.type = "text";
+                commentInput.className = "history-comment";
+                commentInput.maxLength = MAX_PARTY_COMMENT;
+                commentInput.placeholder = "Комментарий";
+                commentInput.value = entry.comment || "";
+                commentInput.setAttribute("aria-label", "Комментарий к партии");
+                commentInput.addEventListener("click", (event) => event.stopPropagation());
+                commentInput.addEventListener("pointerdown", (event) => event.stopPropagation());
+                const persistComment = () => {
+                    const next = sanitizePartyComment(commentInput.value);
+                    commentInput.value = next;
+                    if (next === (entry.comment || "")) {
+                        return;
+                    }
+                    updatePartyComment(entry, next);
+                    entry.comment = next;
+                };
+                commentInput.addEventListener("change", persistComment);
+                commentInput.addEventListener("blur", persistComment);
+                commentInput.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        commentInput.blur();
+                    }
+                });
+
+                item.append(button, commentInput);
+                historyListEl.appendChild(item);
+            });
         }
 
         function nextPaint() {
@@ -2619,6 +3934,21 @@
         }
 
         function renderStatus() {
+            const canUndo = history.length > 0;
+            const bestWin = currentBestWin();
+            if (gameSeedLabel) {
+                gameSeedLabel.textContent = String(boardSeed >>> 0);
+            }
+            flipBoardButton.disabled = gameOver || !initialSnapshot || !cells.length;
+            undoButton.disabled = !canUndo;
+            undoStepButton.disabled = !canUndo;
+            if (undoStepCountEl) {
+                undoStepCountEl.textContent = String(moveCount);
+            }
+            undoStepButton.setAttribute("aria-label", `Ход назад. Сделано ходов: ${moveCount}`);
+            endgameUndoButton.disabled = !canUndo;
+            moveLogButton.disabled = false;
+            bestComboButton.disabled = !bestWin;
             restartButton.disabled = !initialSnapshot;
             newGameButton.disabled = false;
             backToMenuButton.disabled = false;
@@ -2638,12 +3968,16 @@
             endgameTextEl.textContent = "";
         }
 
+        function seedCaption() {
+            return `Seed: ${boardSeed >>> 0}`;
+        }
+
         function showEndgameEffect(playerId) {
             clearEndgameEffect();
 
             if (playerId === 0) {
                 endgameTitleEl.textContent = "Победа!";
-                endgameTextEl.textContent = "Ты захватил больше половины поля. Салют!";
+                endgameTextEl.textContent = `Ты захватил больше половины поля. Салют! ${seedCaption()}`;
                 createFireworks();
                 endgameEffectEl.classList.add("visible", "victory");
                 return;
@@ -2651,13 +3985,13 @@
 
             if (playerId === null) {
                 endgameTitleEl.textContent = "Ничья!";
-                endgameTextEl.textContent = "Победила дружба.";
+                endgameTextEl.textContent = `Победила дружба. ${seedCaption()}`;
                 endgameEffectEl.classList.add("visible", "draw");
                 return;
             }
 
             endgameTitleEl.textContent = "Поражение";
-            endgameTextEl.textContent = "Компьютер первым забрал больше половины поля. Можно откатить ход и попробовать иначе.";
+            endgameTextEl.textContent = `Компьютер первым забрал больше половины поля. Можно откатить ход и попробовать иначе. ${seedCaption()}`;
             createDefeatRain();
             endgameEffectEl.classList.add("visible", "defeat");
         }
@@ -2755,6 +4089,20 @@
             showStartScreen();
 
             menuStartButton.addEventListener("click", startNewGame);
+            menuSeedButton.addEventListener("click", () => {
+                seedErrorEl.textContent = "";
+                seedInput.value = boardSeed ? String(boardSeed) : "";
+                openDialog(seedDialogEl);
+                seedInput.focus();
+            });
+            menuHistoryButton.addEventListener("click", () => {
+                renderHistoryDialog();
+                openDialog(historyDialogEl);
+            });
+            menuScreenshotButton.addEventListener("click", () => {
+                screenshotErrorEl.textContent = "";
+                openDialog(screenshotDialogEl);
+            });
             menuSettingsButton.addEventListener("click", () => {
                 syncSettingsInputs();
                 openDialog(settingsDialogEl);
@@ -2763,13 +4111,40 @@
             settingsCloseButton.addEventListener("click", () => closeDialog(settingsDialogEl));
             settingsSaveButton.addEventListener("click", saveSettingsFromInputs);
             rulesCloseButton.addEventListener("click", () => closeDialog(rulesDialogEl));
+            seedCancelButton.addEventListener("click", () => closeDialog(seedDialogEl));
+            seedStartButton.addEventListener("click", () => startGameFromSeed(seedInput.value));
+            seedInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    startGameFromSeed(seedInput.value);
+                }
+            });
+            historyCloseButton.addEventListener("click", () => closeDialog(historyDialogEl));
+            moveLogButton.addEventListener("click", openMoveLogDialog);
+            moveLogCloseButton.addEventListener("click", () => closeDialog(moveLogDialogEl));
+            bestComboButton.addEventListener("click", openBestComboDialog);
+            bestComboCloseButton.addEventListener("click", () => closeDialog(bestComboDialogEl));
+            screenshotCancelButton.addEventListener("click", () => closeDialog(screenshotDialogEl));
+            screenshotPickButton.addEventListener("click", () => screenshotInput.click());
+            screenshotInput.addEventListener("change", () => {
+                const file = screenshotInput.files && screenshotInput.files[0];
+                screenshotInput.value = "";
+                if (file) {
+                    startGameFromScreenshot(file);
+                }
+            });
             if (gameDifficultyInput) {
                 gameDifficultyInput.addEventListener("change", () => {
+                    changeDifficulty(gameDifficultyInput.value);
+                });
+                gameDifficultyInput.addEventListener("input", () => {
                     changeDifficulty(gameDifficultyInput.value);
                 });
             }
             gameMenuButton.addEventListener("click", (event) => {
                 event.stopPropagation();
+                if (performance.now() < suppressMenuToggleUntil) {
+                    return;
+                }
                 toggleGameMenu();
             });
             document.addEventListener("click", (event) => {
@@ -2780,15 +4155,29 @@
             document.addEventListener("keydown", (event) => {
                 if (event.key === "Escape") {
                     closeGameMenu();
+                    closeDialog(seedDialogEl);
+                    closeDialog(historyDialogEl);
+                    closeDialog(moveLogDialogEl);
+                    closeDialog(bestComboDialogEl);
+                    closeDialog(screenshotDialogEl);
+                    if (endgameEffectEl.classList.contains("visible")) {
+                        clearEndgameEffect();
+                    }
                 }
             });
             window.addEventListener("resize", updateBoardSize);
+            flipBoardButton.addEventListener("click", flipBoard);
+            undoButton.addEventListener("click", undoMove);
+            undoStepButton.addEventListener("click", undoMove);
             backToMenuButton.addEventListener("click", showStartScreen);
             restartButton.addEventListener("click", restartSameField);
             newGameButton.addEventListener("click", startNewGame);
             endgameNewGameButton.addEventListener("click", startNewGame);
             endgameReplayButton.addEventListener("click", restartSameField);
+            endgameUndoButton.addEventListener("click", undoMove);
             endgameMenuButton.addEventListener("click", showStartScreen);
+            endgameCloseButton.addEventListener("click", clearEndgameEffect);
+            endgameDismissButton.addEventListener("click", clearEndgameEffect);
             registerServiceWorker();
         }
 
